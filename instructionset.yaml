@@ -1,0 +1,482 @@
+Category: Identification
+    Instruction: '*IDN'
+        Name: Identification
+        Description: Answers "REC BMS xxx" where xxx is the type of BMS
+        Range: null
+        Return:
+            Description: Device identification
+            Value: string
+            Unit: Description
+Category: InValueional Arrays
+    Instruction: LCD1
+        Name: Main Data 1
+        Description: 'First answer is 28 – how many byte data will be sent and then data message follows as 7 float values:'
+        Range: null
+        Return:
+            Array:
+                0:
+                    Description: message length in bytes
+                    Unit: count
+                    Value: integer
+            Array:
+                0: 
+                    Description: min cell voltage
+                    Unit: volts
+                    Value: float
+                1: 
+                    Description: max cell voltage
+                    Unit: volts
+                    Value: float
+                2:
+                    Description: current
+                    Unit: volts
+                    Value: float
+                3:
+                    Description: max temperature
+                    Unit: celcius
+                    Value: float
+                4:
+                    Description: pack voltage
+                    Unit: volts
+                    Value: float
+                5:
+                    Description: SOC (state of charge) interval 0-1-> 1=100%
+                    Unit: percent
+                    Value: float
+                6:
+                    Description: SOH (state of health) interval 0-1-> 1=100%
+                    Unit: percent
+                    Value: float
+    Instruction: LCD3
+        Name: Main Data 3
+        Description: First answer is 8 – how many byte data will be sent and then data message follows as 8 byte values:
+        Range: null
+        Return:
+            Array:
+                0:
+                    Description: min cell BMS address
+                    Unit: identity_bms
+                    Value: int
+                1:
+                    Description: min cell number
+                    Unit: identity_cell
+                    Value: int
+                2:
+                    Description: max cell BMS address
+                    Unit: identity_bms
+                    Value: int
+                3:
+                    Description: max cell number
+                    Unit: identity_cell
+                    Value: int
+                4:
+                    Description: max temperature sense BMS address
+                    Unit: identity_bms
+                    Value: int
+                5:
+                    Description: max temperature sense number
+                    Unit: identity_cell
+                    Value: int
+                6:
+                    Description: Ah MSB
+                    Unit: amphour
+                    Value: int
+                7:
+                    Description: Ah LSB
+                    Unit: amphour
+                    Value: int
+    Instruction: CELL
+        Name: Cell Voltages
+        Description: BMS first responds with how many BMS units are connected, then it sends the values of the cells in float Value
+        Range: null
+        Return:
+            Array:
+                0: 
+                    Description: number of BMS units
+                    Unit: count
+                    Value: int
+                1:
+                    Description: cell voltages
+                    Array:
+                        0:
+                            Description: cell voltage
+                            Unit: voltage
+                            Value: float
+    Instruction: PTEM
+        Name: Cell temperatures
+        Description: BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value
+        Range: null
+        Return:
+            Array:
+                0:
+                    Description: number of BMS units
+                    Unit: count
+                    Value: int
+                1:
+                    Description: temperature sensors
+                    Unit: celcius
+                    Value: float
+    Instruction: RINT
+        Name: Cell internal DC resistance
+        Description: BMS first responds with how many BMS units are connected then it sends the values in float Value
+        Range: null
+        Return:
+            Array:
+                0:
+                    Description: number of BMS units
+                    Unit: count
+                    Value: int
+                1:
+                    Description: cell resistance
+                    Unit: ohms
+                    Value: float
+    Instruction: BTEM
+        Name: BMS temperature
+        Description: BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.
+        Range: null
+        Return:
+            Array:
+                0:
+                    Description: number of BMS units
+                    Unit: count
+                    Value: int
+                1:
+                    Description: BMS temperature
+                    Unit: celcius
+                    Value: float
+
+    Instruction: ERRO
+        Name: Error number description array
+        Description: First answer is 4 – how many byte data will be sent and then data message follows as 4 byte values.
+        Range: null
+        Return:
+            Array:
+                0:
+                    Description: data bytes to be sent
+                    Unit: count
+                    Value: byte
+                1:
+                    Description: 4 byte error values
+                    Array:
+                        0:
+                            Description: 0 – no error, 1 – error
+                            Unit: boolean
+                            Value: binary
+                        1:
+                            Description: BMS unit
+                            Unit: identity_bms
+                            Value: int
+                        2:
+                            Description: error number (1-16)
+                            Unit: identity
+                            Value: int
+                        3:
+                            Description: number of the cell, temperature sensor where the error occured
+                            Unit: identity
+                            Value: int
+Category: Cell settings
+    Instruction: BVOL
+        Name: Balance end voltage
+        Description: Returns voltage value
+        Range:
+            Min: 2.5
+            Max: 4.30
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: BMIN
+        Name: Balance start voltage
+        Description: Returns voltage value
+        Range:
+            Min: 2.50
+            Max: 4.30
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: CMAX
+        Name: Cell over-voltage switch-off
+        Description: Returns voltage value
+        Range:
+            Min: 2.0
+            Max: 4.30
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: MAXH
+        Name: Over-voltage switch-off hysteresis per cell
+        Description: Returns voltage value
+        Range:
+            Min: 0.005
+            Max: 2.0
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: CMIN
+        Name: Cell-under voltage protection switch-off
+        Description: Returns voltage value
+        Range:
+            Min: 1.8
+            Max: 4.0
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: MINH
+        Name: Over- voltage switch-off hysteresis per cell
+        Description: Returns voltage value
+        Range:
+            Min: 0.005
+            Max: 2.0
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: CHAR
+        Name: Cell End of charging voltage
+        Description: Returns voltage value
+        Range:
+            Min: 2.0
+            Max: 4.30
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: CHIS
+        Name: End of charging voltage hysteresis per cell 
+        Description: Returns voltage value
+        Range:
+            Min: 0.005
+            Max: 2.0
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+    Instruction: RAZL
+        Name: Cells max difference
+        Description: Returns voltage value
+        Range:
+            Min: 0.005
+            Max: 1.0
+        Return:
+            Description: volts
+            Unit: volts
+            Value: float
+Category: Temperature settings
+    Instruction: TMAX
+        Name: cell over temperature switch-off
+        Description: cell over temperature switch-off
+        Range:
+            Min: -20
+            Max: 65
+        Return:
+            Description: temperature
+            Unit: celcius
+            Value: signed_float
+    Instruction: TMIN
+        Name: Under-temperature charging disable
+        Description: Under-temperature charging disable
+        Range:
+            Min: -30
+            Max: 65
+        Return:
+            Description: temperature
+            Unit: celcius
+            Value: signed_float
+    Instruction: TBAL
+        Name: BMS over-temperature switch-off
+        Description: BMS over-temperature switch-off
+        Range:
+            Min: -20
+            Max: 65
+        Return:
+            Description: temperature
+            Unit: celcius
+            Value: signed_float
+    Instruction: BMTH
+        Name: BMS over temperature switch-off hysteresis
+        Description: BMS over temperature switch-off hysteresis
+        Range:
+            Min: 1
+            Max: 30
+        Return:
+            Description: temperature
+            Unit: celcius
+            Value: signed_float
+Category: Current settings
+    Instruction: IOFF
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: IOJA
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+Category: Battery pack settings
+    Instruction: CYCL
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: CAPA
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: CHEM
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+Category: State of Charge settings
+    Instruction: SOCH
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: SOCS
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+Category: Victron communication settings
+    Instruction: CHAC
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: DCHC
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: SISN
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: MAXC
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: MAXD
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: CLOW
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: CANF
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+Category: Error log
+    Instruction: VMAX
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: VMIN
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+Category: BMS settings
+    Instruction: SWVR
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: HWVR
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: EAVC
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: ODDC
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
+    Instruction: REFC
+        Name:
+        Description:
+        Range:
+            Min:
+            Max:
+        Return:
+            Value:
