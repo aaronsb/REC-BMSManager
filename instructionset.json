@@ -1,187 +1,201 @@
-Category: Identification
-    Instruction: '*IDN'
-        Name: Identification
-        Description: Answers "REC BMS xxx" where xxx is the type of BMS
-        ReadOnly: true
-        Range: null
-        Return:
-            Description: Device identification
-            Value: string
-            Unit: Description
-Category: Informational Arrays
-    Instruction: LCD1
-        Name: Main Data 1
-        Description: 'First answer is 28 – how many byte data will be sent and then data message follows as 7 float values:'
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0:
-                    Description: message length in bytes
-                    Unit: count
-                    Value: integer
-            Array:
-                0: 
-                    Description: min cell voltage
-                    Unit: volts
-                    Value: float
-                1: 
-                    Description: max cell voltage
-                    Unit: volts
-                    Value: float
-                2:
-                    Description: current
-                    Unit: volts
-                    Value: float
-                3:
-                    Description: max temperature
-                    Unit: celcius
-                    Value: float
-                4:
-                    Description: pack voltage
-                    Unit: volts
-                    Value: float
-                5:
-                    Description: SOC (state of charge) interval 0-1-> 1=100%
-                    Unit: percent
-                    Value: float
-                6:
-                    Description: SOH (state of health) interval 0-1-> 1=100%
-                    Unit: percent
-                    Value: float
-    Instruction: LCD3
-        Name: Main Data 3
-        Description: First answer is 8 – how many byte data will be sent and then data message follows as 8 byte values:
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0:
-                    Description: min cell BMS address
-                    Unit: identity_bms
-                    Value: int
-                1:
-                    Description: min cell number
-                    Unit: identity_cell
-                    Value: int
-                2:
-                    Description: max cell BMS address
-                    Unit: identity_bms
-                    Value: int
-                3:
-                    Description: max cell number
-                    Unit: identity_cell
-                    Value: int
-                4:
-                    Description: max temperature sense BMS address
-                    Unit: identity_bms
-                    Value: int
-                5:
-                    Description: max temperature sense number
-                    Unit: identity_cell
-                    Value: int
-                6:
-                    Description: Ah MSB
-                    Unit: Ampsmphour
-                    Value: int
-                7:
-                    Description: Ah LSB
-                    Unit: Ampsmphour
-                    Value: int
-    Instruction: CELL
-        Name: Cell Voltages
-        Description: BMS first responds with how many BMS units are connected, then it sends the values of the cells in float Value
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0: 
-                    Description: number of BMS units
-                    Unit: count
-                    Value: int
-                1:
-                    Description: cell voltages
-                    Array:
-                        0:
-                            Description: cell voltage
-                            Unit: voltage
-                            Value: float
-    Instruction: PTEM
-        Name: Cell temperatures
-        Description: BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0:
-                    Description: number of BMS units
-                    Unit: count
-                    Value: int
-                1:
-                    Description: temperature sensors
-                    Unit: celcius
-                    Value: float
-    Instruction: RINT
-        Name: Cell internal DC resistance
-        Description: BMS first responds with how many BMS units are connected then it sends the values in float Value
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0:
-                    Description: number of BMS units
-                    Unit: count
-                    Value: int
-                1:
-                    Description: cell resistance
-                    Unit: ohms
-                    Value: float
-    Instruction: BTEM
-        Name: BMS temperature
-        Description: BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0:
-                    Description: number of BMS units
-                    Unit: count
-                    Value: int
-                1:
-                    Description: BMS temperature
-                    Unit: celcius
-                    Value: float
+{
+    "Command": {
+        "Category": "Identification",
+        "Instruction": "*IDN",
+            "Name": "Identification",
+            "Description": "Answers REC BMS xxx where xxx is the type of BMS",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Description": "Device identification",
+                "Value": "string",
+                "Unit": "Description"
+            }
+},
+    "Command": {
+        "Category": "Information Array",
+        "Instruction": "LCD1",
+            "Name": "Main_Data_1",
+            "Description": "First answer is 28 – how many byte data will be sent and then data message follows as 7 float values:",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array0": {
+                    "0": {
+                        "Description": "message length in bytes",
+                        "Unit": "count",
+                        "Value": "integer"
+                    }
+                },
+                "Array1": {
+                    "0": { 
+                        "Description": "min cell voltage",
+                        "Unit": "volts",
+                        "Value": "float"
+                    },
+                    "1": {
+                        "Description": "max cell voltage",
+                        "Unit": "volts",
+                        "Value": "float"
+                    },
+                    "2": {
+                        "Description": "current",
+                        "Unit": "volts",
+                        "Value": "float"
+                    },
+                    "3": {
+                        "Description": "max temperature",
+                        "Unit": "celcius",
+                        "Value": "float"
+                    },
+                    "4": {
+                        "Description": "pack voltage",
+                        "Unit": "volts",
+                        "Value": "float"
+                    },
+                    "5": {
+                        "Description": "SOC (state of charge) interval 0-1-> 1=100%",
+                        "Unit": "percent",
+                        "Value": "float"
+                    },
+                    "6": {
+                        "Description": "SOH (state of health) interval 0-1-> 1=100%",
+                        "Unit": "percent",
+                        "Value": "float"
+                    }
+        Instruction: LCD3
+            Name: Main Data 3
+            Description: First answer is 8 – how many byte data will be sent and then data message follows as 8 byte values:
+            ReadOnly: true
+            Range: null
+            Return:
+                Array:
+                    0:
+                        Description: min cell BMS address
+                        Unit: identity_bms
+                        Value: int
+                    1:
+                        Description: min cell number
+                        Unit: identity_cell
+                        Value: int
+                    2:
+                        Description: max cell BMS address
+                        Unit: identity_bms
+                        Value: int
+                    3:
+                        Description: max cell number
+                        Unit: identity_cell
+                        Value: int
+                    4:
+                        Description: max temperature sense BMS address
+                        Unit: identity_bms
+                        Value: int
+                    5:
+                        Description: max temperature sense number
+                        Unit: identity_cell
+                        Value: int
+                    6:
+                        Description: Ah MSB
+                        Unit: Ampsmphour
+                        Value: int
+                    7:
+                        Description: Ah LSB
+                        Unit: Ampsmphour
+                        Value: int
+        Instruction: CELL
+            Name: Cell Voltages
+            Description: BMS first responds with how many BMS units are connected, then it sends the values of the cells in float Value
+            ReadOnly: true
+            Range: null
+            Return:
+                Array:
+                    0: 
+                        Description: number of BMS units
+                        Unit: count
+                        Value: int
+                    1:
+                        Description: cell voltages
+                        Array:
+                            0:
+                                Description: cell voltage
+                                Unit: voltage
+                                Value: float
+        Instruction: PTEM
+            Name: Cell temperatures
+            Description: BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value
+            ReadOnly: true
+            Range: null
+            Return:
+                Array:
+                    0:
+                        Description: number of BMS units
+                        Unit: count
+                        Value: int
+                    1:
+                        Description: temperature sensors
+                        Unit: celcius
+                        Value: float
+        Instruction: RINT
+            Name: Cell internal DC resistance
+            Description: BMS first responds with how many BMS units are connected then it sends the values in float Value
+            ReadOnly: true
+            Range: null
+            Return:
+                Array:
+                    0:
+                        Description: number of BMS units
+                        Unit: count
+                        Value: int
+                    1:
+                        Description: cell resistance
+                        Unit: ohms
+                        Value: float
+        Instruction: BTEM
+            Name: BMS temperature
+            Description: BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.
+            ReadOnly: true
+            Range: null
+            Return:
+                Array:
+                    0:
+                        Description: number of BMS units
+                        Unit: count
+                        Value: int
+                    1:
+                        Description: BMS temperature
+                        Unit: celcius
+                        Value: float
 
-    Instruction: ERRO
-        Name: Error number description array
-        Description: First answer is 4 – how many byte data will be sent and then data message follows as 4 byte values.
-        ReadOnly: true
-        Range: null
-        Return:
-            Array:
-                0:
-                    Description: data bytes to be sent
-                    Unit: count
-                    Value: byte
-                1:
-                    Description: 4 byte error values
-                    Array:
-                        0:
-                            Description: 0 – no error, 1 – error
-                            Unit: boolean
-                            Value: binary
-                        1:
-                            Description: BMS unit
-                            Unit: identity_bms
-                            Value: int
-                        2:
-                            Description: error number (1-16)
-                            Unit: identity
-                            Value: int
-                        3:
-                            Description: number of the cell, temperature sensor where the error occured
-                            Unit: identity
-                            Value: int
+        Instruction: ERRO
+            Name: Error number description array
+            Description: First answer is 4 – how many byte data will be sent and then data message follows as 4 byte values.
+            ReadOnly: true
+            Range: null
+            Return:
+                Array:
+                    0:
+                        Description: data bytes to be sent
+                        Unit: count
+                        Value: byte
+                    1:
+                        Description: 4 byte error values
+                        Array:
+                            0:
+                                Description: 0 – no error, 1 – error
+                                Unit: boolean
+                                Value: binary
+                            1:
+                                Description: BMS unit
+                                Unit: identity_bms
+                                Value: int
+                            2:
+                                Description: error number (1-16)
+                                Unit: identity
+                                Value: int
+                            3:
+                                Description: number of the cell, temperature sensor where the error occured
+                                Unit: identity
+                                Value: int
 Category: Cell settings
     Instruction: BVOL
         Name: Balance end voltage
