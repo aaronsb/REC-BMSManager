@@ -27,6 +27,8 @@
             CRC: First half of CRC-16
             CRC: Second half of CRC-16
             ETX: End Transmission
+
+            #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
             
         -->
     </Message>

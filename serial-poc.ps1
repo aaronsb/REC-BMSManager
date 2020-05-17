@@ -39,7 +39,8 @@ Function Convert-HexToByteArray {
 
 Function QueryBMS {
 $endMessage = "0xAA"
-$hexdata = ("55,01,00,05,4c,43,44,31,3f,46,d0,aa").Split(",")
+$hexdata = ("55,01,00,05,2a,49,44,4e,3f,a6,fb,aa").Split(",")
+#$hexdata = ("55,01,00,05,4c,43,44,31,3f,46,d0,aa").Split(",")
 # [55 (Start Transmission)],[01 (Destination Address)],[00 (Sender Address)],[05 (Numner of bytes in payload)],[LCD1? (ascii, instruction)],[46,d0(crc-16)],[aa (End Transmission])]
 #calculate crc-16 [in these bytes] 55,[01,00,05,4c,43,44,31,3f],46,d0,aa
 $bytes = Convert-HexToByteArray ($hexdata -join "")
@@ -71,10 +72,10 @@ $port.Write([byte[]] $bytes, 0, ($bytes.count))
 while ((Get-Date) - $StartTime -lt $period) {   
     $byte = $port.ReadByte()
     if ($byte -eq ""){
-        $false
+        write-warning "no byte found"
     }
     else {
-        '{0:x}' -f $byte
+        '{0:x2}' -f $byte
     }
 }
 $port.Close()  

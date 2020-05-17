@@ -1,5 +1,5 @@
 #REQUIRES -Version 3.0
-Function getCRC16($hexdata) {
+Function Get-CRC16($hexdata) {
 
     $bytes = Convert-HexToByteArray ($hexdata -join "")
     $CRCTable = 0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
