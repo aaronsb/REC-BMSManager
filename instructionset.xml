@@ -1,577 +1,776 @@
-{
-    "Command": {
-        "Category": "Identification",
-        "Instruction": "*IDN",
-            "Name": "Identification",
-            "Description": "Answers REC BMS xxx where xxx is the type of BMS",
-            "ReadOnly": true,
-            "Range": null,
-            "Return": {
-                "Description": "Device identification",
-                "Value": "string",
-                "Unit": "Description"
-            }
-},
-    "Command": {
-        "Category": "Information Array",
-        "Instruction": "LCD1",
-            "Name": "Main_Data_1",
-            "Description": "First answer is 28 – how many byte data will be sent and then data message follows as 7 float values:",
-            "ReadOnly": true,
-            "Range": null,
-            "Return": {
-                "Array0": {
-                    "0": {
-                        "Description": "message length in bytes",
-                        "Unit": "count",
-                        "Value": "integer"
-                    }
-                },
-                "Array1": {
-                    "0": { 
-                        "Description": "min cell voltage",
-                        "Unit": "volts",
-                        "Value": "float"
-                    },
-                    "1": {
-                        "Description": "max cell voltage",
-                        "Unit": "volts",
-                        "Value": "float"
-                    },
-                    "2": {
-                        "Description": "current",
-                        "Unit": "volts",
-                        "Value": "float"
-                    },
-                    "3": {
-                        "Description": "max temperature",
-                        "Unit": "celcius",
-                        "Value": "float"
-                    },
-                    "4": {
-                        "Description": "pack voltage",
-                        "Unit": "volts",
-                        "Value": "float"
-                    },
-                    "5": {
-                        "Description": "SOC (state of charge) interval 0-1-> 1=100%",
-                        "Unit": "percent",
-                        "Value": "float"
-                    },
-                    "6": {
-                        "Description": "SOH (state of health) interval 0-1-> 1=100%",
-                        "Unit": "percent",
-                        "Value": "float"
-                    }
-        Instruction: LCD3
-            Name: Main Data 3
-            Description: First answer is 8 – how many byte data will be sent and then data message follows as 8 byte values:
-            ReadOnly: true
-            Range: null
-            Return:
-                Array:
-                    0:
-                        Description: min cell BMS address
-                        Unit: identity_bms
-                        Value: int
-                    1:
-                        Description: min cell number
-                        Unit: identity_cell
-                        Value: int
-                    2:
-                        Description: max cell BMS address
-                        Unit: identity_bms
-                        Value: int
-                    3:
-                        Description: max cell number
-                        Unit: identity_cell
-                        Value: int
-                    4:
-                        Description: max temperature sense BMS address
-                        Unit: identity_bms
-                        Value: int
-                    5:
-                        Description: max temperature sense number
-                        Unit: identity_cell
-                        Value: int
-                    6:
-                        Description: Ah MSB
-                        Unit: Ampsmphour
-                        Value: int
-                    7:
-                        Description: Ah LSB
-                        Unit: Ampsmphour
-                        Value: int
-        Instruction: CELL
-            Name: Cell Voltages
-            Description: BMS first responds with how many BMS units are connected, then it sends the values of the cells in float Value
-            ReadOnly: true
-            Range: null
-            Return:
-                Array:
-                    0: 
-                        Description: number of BMS units
-                        Unit: count
-                        Value: int
-                    1:
-                        Description: cell voltages
-                        Array:
-                            0:
-                                Description: cell voltage
-                                Unit: voltage
-                                Value: float
-        Instruction: PTEM
-            Name: Cell temperatures
-            Description: BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value
-            ReadOnly: true
-            Range: null
-            Return:
-                Array:
-                    0:
-                        Description: number of BMS units
-                        Unit: count
-                        Value: int
-                    1:
-                        Description: temperature sensors
-                        Unit: celcius
-                        Value: float
-        Instruction: RINT
-            Name: Cell internal DC resistance
-            Description: BMS first responds with how many BMS units are connected then it sends the values in float Value
-            ReadOnly: true
-            Range: null
-            Return:
-                Array:
-                    0:
-                        Description: number of BMS units
-                        Unit: count
-                        Value: int
-                    1:
-                        Description: cell resistance
-                        Unit: ohms
-                        Value: float
-        Instruction: BTEM
-            Name: BMS temperature
-            Description: BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.
-            ReadOnly: true
-            Range: null
-            Return:
-                Array:
-                    0:
-                        Description: number of BMS units
-                        Unit: count
-                        Value: int
-                    1:
-                        Description: BMS temperature
-                        Unit: celcius
-                        Value: float
 
-        Instruction: ERRO
-            Name: Error number description array
-            Description: First answer is 4 – how many byte data will be sent and then data message follows as 4 byte values.
-            ReadOnly: true
-            Range: null
-            Return:
-                Array:
-                    0:
-                        Description: data bytes to be sent
-                        Unit: count
-                        Value: byte
-                    1:
-                        Description: 4 byte error values
-                        Array:
-                            0:
-                                Description: 0 – no error, 1 – error
-                                Unit: boolean
-                                Value: binary
-                            1:
-                                Description: BMS unit
-                                Unit: identity_bms
-                                Value: int
-                            2:
-                                Description: error number (1-16)
-                                Unit: identity
-                                Value: int
-                            3:
-                                Description: number of the cell, temperature sensor where the error occured
-                                Unit: identity
-                                Value: int
-Category: Cell settings
-    Instruction: BVOL
-        Name: Balance end voltage
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 2.5
-            Max: 4.30
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: BMIN
-        Name: Balance start voltage
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 2.50
-            Max: 4.30
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: CMAX
-        Name: Cell over-voltage switch-off
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 2.0
-            Max: 4.30
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: MAXH
-        Name: Over-voltage switch-off hysteresis per cell
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 0.005
-            Max: 2.0
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: CMIN
-        Name: Cell-under voltage protection switch-off
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 1.8
-            Max: 4.0
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: MINH
-        Name: Over- voltage switch-off hysteresis per cell
-        Description: Returns voltage value
-        ReadOnly: false
-        ReadOnly: false
-        Range:
-            Min: 0.005
-            Max: 2.0
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: CHAR
-        Name: Cell End of charging voltage
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 2.0
-            Max: 4.30
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: CHIS
-        Name: End of charging voltage hysteresis per cell 
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 0.005
-            Max: 2.0
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-    Instruction: RAZL
-        Name: Cells max difference
-        Description: Returns voltage value
-        ReadOnly: false
-        Range:
-            Min: 0.005
-            Max: 1.0
-        Return:
-            Description: volts
-            Unit: volts
-            Value: float
-Category: Temperature settings
-    Instruction: TMAX
-        Name: cell over temperature switch-off
-        Description: cell over temperature switch-off
-        ReadOnly: false
-        Range:
-            Min: -20
-            Max: 65
-        Return:
-            Description: temperature
-            Unit: celcius
-            Value: signed_float
-    Instruction: TMIN
-        Name: Under-temperature charging disable
-        Description: Under-temperature charging disable
-        ReadOnly: false
-        Range:
-            Min: -30
-            Max: 65
-        Return:
-            Description: temperature
-            Unit: celcius
-            Value: signed_float
-    Instruction: TBAL
-        Name: BMS over-temperature switch-off
-        Description: BMS over-temperature switch-off
-        ReadOnly: false
-        Range:
-            Min: -20
-            Max: 65
-        Return:
-            Description: temperature
-            Unit: celcius
-            Value: signed_float
-    Instruction: BMTH
-        Name: BMS over temperature switch-off hysteresis
-        Description: BMS over temperature switch-off hysteresis
-        ReadOnly: false
-        Range:
-            Min: 1
-            Max: 30
-        Return:
-            Description: temperature
-            Unit: celcius
-            Value: signed_float
-Category: Current settings
-    Instruction: IOFF
-        Name: Current measurement zero offset
-        Description: Current measurement zero offset
-        ReadOnly: false
-        Range:
-            Min: -2.0
-            Max: 2.0
-        Return:
-            Description: current in amps
-            Unit: Ampsmps
-            Value: signed_float
-    Instruction: IOJA
-        Name: Voltage to current coefficient 
-        Description: Voltage to current coefficient
-        ReadOnly: false
-        Range:
-            Min: 0.0005
-            Max: 0.5
-        Return:
-            Description: coefficient
-            Unit: mu
-            Value: float
-Category: Battery pack settings
-    Instruction: CYCL
-        Name: Number of full battery pack cycles
-        Description: Number of full battery pack cycles
-        ReadOnly: false
-        Range:
-            Min: 0
-            Max: 8000
-        Return:
-            Description: battery pack cycles
-            Unit: count
-            Value: integer
-    Instruction: CAPA
-        Name: Battery pack capacity
-        Description: Battery pack capacity
-        ReadOnly: false
-        Range:
-            Min: 1.0
-            Max: 5000.0
-        Return:
-            Description: capacity in Amp hours
-            Unit: Ampsh
-            Value: float
-    Instruction: CHEM
-        Name: Li-ion chemistry
-        Description: Li-ion chemistry
-        ReadOnly: false
-        Range:
-            Min: 1
-            Max: 5
-        Return:
-            Description: chemistry selection via lookup
-            Unit: identity
-            Value: unsigned_char
-Category: State of Charge settings
-    Instruction: SOCH
-        Name: SOC end of charge hysteresis
-        Description: SOC end of charge hysteresis
-        ReadOnly: false
-        Range:
-            Min: 0.005
-            Max: 0.99
-        Return:
-            Description: Returns float value 0 – 1.0
-            Unit: percent
-            Value: float
-    Instruction: SOCS
-        Name: SOC manual re-set
-        Description: SOC manual re-set
-        ReadOnly: false
-        Range:
-            Min: 0.01
-            Max: 1.00
-        Return:
-            Description: Returns float value 0 – 1.0
-            Unit: percent
-            Value: float
-Category: Victron communication settings
-    Instruction: CHAC
-        Name: Charge coefficient (0-3C)
-        Description: Charge coefficient (0-3C)
-        ReadOnly: false
-        Range:
-            Min: 0.01
-            Max: 1.00
-        Return:
-            Description: Returns float value 0-3.0 (default 0.6)
-            Unit: mu
-            Value: float
-    Instruction: DCHC
-        Name: Discharge coefficient (0-3C)
-        Description: Discharge coefficient (0-3C)
-        ReadOnly: false
-        Range:
-            Min: 0.01
-            Max: 3.0
-        Return:
-            Description: Returns float value 0-3.0 (default 1.5) 
-            Unit: mu
-            Value: float
-    Instruction: SISN
-        Name: Number of inverter devices on the bus
-        Description: Number of inverter devices on the bus
-        ReadOnly: false
-        Range:
-            Min: 1
-            Max: 6
-        Return:
-            Description: default is 1
-            Unit: count
-            Value: unsigned_char
-    Instruction: MAXC
-        Name: Maximum charge current per inverter device
-        Description: Maximum charge current per inverter device
-        ReadOnly: false
-        Range:
-            Min: 5.0
-            Max: 345.0
-        Return:
-            Description: amperage per inverter
-            Unit: Amps
-            Value: float
-    Instruction: MAXD
-        Name: Maximum discharge current per inverter device
-        Description: Maximum discharge current per inverter device
-        ReadOnly: false
-        Range:
-            Min: 5.0
-            Max: 345.0
-        Return:
-            Description: amperage per inverter
-            Unit: Ampsmps
-            Value: float
-    Instruction: CLOW
-        Name: cell under-voltage discharge protection
-        Description: cell under-voltage discharge protection
-        ReadOnly: false
-        Range:
-            Min: 1.8
-            Max: 4.20
-        Return:
-            Description: voltage per cell
-            Unit: V
-            Value: float
-    Instruction: CANF
-        Name: CAN Frequency
-        Description: CAN Frequency
-        ReadOnly: false
-        Range:
-            Min: 1
-            Max: 2
-        Return:
-            Description: 1 is 250 kb/s 2 is 500 kb/s
-            Unit: identity
-            Value: unsigned_char
-Category: Error log
-    Instruction: VMAX
-        Name: Number of exceeded values of CMAX
-        Description: Number of exceeded values of CMAX
-        ReadOnly: false
-        Range:
-            Min: 0
-            Max: 8000
-        Return:
-            Description: Count of cycles of cells over max voltage
-            Unit: count
-            Value: integer
-    Instruction: VMIN
-        Name: Number of exceeded values of CMIN
-        Description: Number of exceeded values of CMIN
-        ReadOnly: false
-        Range:
-            Min: 0
-            Max: 8000
-        Return:
-            Description: Count of cycles of cells under minimum voltage
-            Unit: count
-            Value: integer
-Category: BMS settings
-    Instruction: SWVR
-        Name: BMS software version
-        Description: BMS software version
-        ReadOnly: true
-        Range: null
-        Return:
-            Description: Current version of software on BMS
-            Unit: Description
-            Value: string
-    Instruction: HWVR
-        Name: BMS hardware version
-        Description: BMS hardware version
-        ReadOnly: true
-        Range: null
-        Return:
-            Description: Hardware revision of BMS
-            Unit: Description
-            Value: string
-    Instruction: EAVC
-        Name: Even cells calibration value
-        Description: Even cells calibration value
-        ReadOnly: false
-        Range:
-            Min: -0.0003
-            Max: 0.0003
-        Return:
-            Description: even cell calibration value in volts
-            Unit: volts
-            Value: signed_float
-    Instruction: ODDC
-        Name: Odd cells calibration value
-        Description: Odd cells calibration value
-        ReadOnly: false
-        Range:
-            Min: -0.0003
-            Max: 0.0003
-        Return:
-            Description: odd cell calibration value in volts
-            Unit: volts
-            Value: signed_float
-    Instruction: REFC
-        Name: ADC reference voltage 5.000 V +/- 3 mV
-        Description: ADC reference voltage 5.000 V +/- 3 mV
-        ReadOnly: false
-        Range:
-            Min: 4.007
-            Max: 5.003
-        Return:
-            Description:
-            Unit: volts
-            Value: signed_float
+<Library>
+    <Command category="Identification">
+        <Instruction>*IDN</Instruction>
+        <Name>Identification</Name>
+        <Description>Answers REC BMS xxx where xxx is the type of BMS</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Description>Device identification</Description>
+            <Value>string</Value>
+            <Unit>Description</Unit>
+        </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>LCD1</Instruction>
+        <Name>Main_Data_1</Name>
+        <Description>First answer is 28 how many byte data will be sent and then data message follows as 7 float values:</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Array>
+                <Value>
+                    <Description>message length in bytes</Description>
+                    <Unit>count</Unit>
+                    <Value>integer</Value>
+                    <Position>0</Position>
+                </Value>
+                <Value>
+                    <Description>min cell voltage</Description>
+                    <Unit>volts</Unit>
+                    <Value>float</Value>
+                    <Position>1</Position>
+                </Value>
+                <Value>
+                    <Description>max cell voltage</Description>
+                    <Unit>volts</Unit>
+                    <Value>float</Value>
+                    <Position>2</Position>
+                </Value>
+                <Value>
+                    <Description>current</Description>
+                    <Unit>volts</Unit>
+                    <Value>float</Value>
+                    <Position>3</Position>
+                </Value>
+                <Value>
+                    <Description>max temperature</Description>
+                    <Unit>celcius</Unit>
+                    <Value>float</Value>
+                    <Position>4</Position>
+                </Value>
+                <Value>
+                    <Description>pack voltage</Description>
+                    <Unit>volts</Unit>
+                    <Value>float</Value>
+                    <Position>5</Position>
+                </Value>
+                <Value>
+                    <Description>SOC (state of charge) interval 0-1-> 1=100%</Description>
+                    <Unit>percent</Unit>
+                    <Value>float</Value>
+                    <Position>6</Position>
+                </Value>
+                <Value>
+                    <Description>SOH (state of health) interval 0-1-> 1=100%</Description>
+                    <Unit>percent</Unit>
+                    <Value>float</Value>
+                    <Position>7</Position>
+                </Value>
+            </Array>
+        </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>LCD3</Instruction>
+        <Name>Main_Data_3</Name>
+        <Description>First answer is 8 how many byte data will be sent and then data message follows as 8 byte values:</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Array>
+                <Value>
+                    <Description>byte count of message payload</Description>
+                    <Unit>count</Unit>
+                    <Value>int</Value>
+                    <Position>0</Position>
+                </Value>
+                <Value>
+                    <Description>min cell BMS address</Description>
+                    <Unit>identity_bms</Unit>
+                    <Value>int</Value>
+                    <Position>1</Position>
+                </Value>
+                <Value>
+                    <Description>min cell number</Description>
+                    <Unit>identity_cell</Unit>
+                    <Value>int</Value>
+                    <Position>2</Position>
+                </Value>
+                <Value>
+                    <Description>max cell BMS address</Description>
+                    <Unit>identity_bms</Unit>
+                    <Value>int</Value>
+                    <Position>3</Position>
+                </Value>
+                <Value>
+                    <Description>max cell number</Description>
+                    <Unit>identity_cell</Unit>
+                    <Value>int</Value>
+                    <Position>4</Position>
+                </Value>
+                <Value>
+                    <Description>max temperature sense BMS address</Description>
+                    <Unit>identity_bms</Unit>
+                    <Value>int</Value>
+                    <Position>5</Position>
+                </Value>
+                <Value>
+                    <Description>max temperature sense number</Description>
+                    <Unit>identity_cell</Unit>
+                    <Value>int</Value>
+                    <Position>6</Position>
+                </Value>
+                <Value>
+                    <Description>Ah MSB</Description>
+                    <Unit>AmpHour</Unit>
+                    <Value>int</Value>
+                    <Position>7</Position>
+                </Value>
+                <Value>
+                    <Description>Ah LSB</Description>
+                    <Unit>AmpHour</Unit>
+                    <Value>int</Value>
+                    <Position>8</Position>
+                </Value>
+            </Array>
+        </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>CELL</Instruction>
+        <Name>Cell Voltages</Name>
+        <Description>BMS first responds with how many BMS units are connected, then it sends the values of the cells configured in float Value</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Array>
+                <Value>
+                    <Description>number of BMS units</Description>
+                    <Unit>count</Unit>
+                    <Value>int</Value>
+                    <Position>0</Position>
+                </Value>
+                <Value>
+                    <Description>cell voltage</Description>
+                    <Unit>voltage</Unit>
+                    <Value>float</Value>
+                    <Position>template</Position>
+                </Value>
+            </Array>
+        </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>PTEM</Instruction>
+        <Name>Cell temperatures</Name>
+        <Description>BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Array>
+                <Value>
+                    <Description>number of BMS units</Description>
+                    <Unit>count</Unit>
+                    <Value>int</Value>
+                    <Position>0</Position>
+                </Value>
+                <Value>
+                    <Description>cell temperature</Description>
+                    <Unit>celcius</Unit>
+                    <Value>float</Value>
+                    <Position>template</Position>
+                </Value>
+            </Array>
+        </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>RINT</Instruction>
+            <Name>Cell internal DC resistance</Name>
+            <Description>BMS first responds with how many BMS units are connected then it sends the values in float Value</Description>
+            <ReadOnly>true</ReadOnly>
+            <Range>null</Range>
+            <Return>
+                <Array>
+                    <Value>
+                        <Description>number of BMS units</Description>
+                        <Unit>count</Unit>
+                        <Value>int</Value>
+                        <Position>0</Position>
+                    </Value>
+                    <Value>
+                        <Description>cell resistance</Description>
+                        <Unit>ohms</Unit>
+                        <Value>float</Value>
+                        <Position>template</Position>
+                    </Value>
+                </Array>
+            </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>BTEM</Instruction>
+            <Name>BMS temperature</Name>
+            <Description>BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.</Description>
+            <ReadOnly>true</ReadOnly>
+            <Range>null</Range>
+            <Return>
+                <Array>
+                    <Value>
+                        <Description>number of BMS units</Description>
+                        <Unit>count</Unit>
+                        <Value>int</Value>
+                        <Position>0</Position>
+                    </Value>
+                    <Value>
+                        <Description>BMS temperature</Description>
+                        <Unit>celcius</Unit>
+                        <Value>float</Value>
+                        <Position>template</Position>
+                    </Value>
+                </Array>
+            </Return>
+    </Command>
+    <Command category="Information">
+        <Instruction>ERRO</Instruction>
+            <Name>Error number description array</Name>
+            <Description>First answer is 4 how many byte data will be sent and then data message follows as 4 byte values.</Description>
+            <ReadOnly>true</ReadOnly>
+            <Range>null</Range>
+            <Return>
+                <Array>
+                    <Value>
+                        <Description>data bytes to be sent</Description>
+                        <Unit>count</Unit>
+                        <Value>byte</Value>
+                        <Position>0</Position>
+                    </Value>
+                    <Value>
+                        <Description>0 – no error, 1 – error</Description>
+                        <Unit>boolean</Unit>
+                        <Value>binary</Value>
+                        <Position>1</Position>
+                    </Value>
+                    <Value>
+                        <Description>BMS unit</Description>
+                        <Unit>identity_bms</Unit>
+                        <Value>int</Value>
+                        <Position>2</Position>
+                    </Value>
+                    <Value>
+                        <Description>error number (1-16)</Description>
+                        <Unit>identity</Unit>
+                        <Value>int</Value>
+                        <Position>3</Position>
+                    </Value>
+                    <Value>
+                        <Description>number of the cell, temperature sensor where the error occured</Description>
+                        <Unit>identity</Unit>
+                        <Value>int</Value>
+                        <Position>4</Position>
+                    </Value>
+                </Array>
+            </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>BVOL</Instruction>
+        <Name>Balance end voltage</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>2.5</Min>
+            <Max>4.30</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>BMIN</Instruction>
+        <Name>Balance start voltage</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>2.50</Min>
+            <Max>4.30</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>CMAX</Instruction>
+        <Name>Cell over-voltage switch-off</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>2.0</Min>
+            <Max>4.30</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>MAXH</Instruction>
+        <Name>Over-voltage switch-off hysteresis per cell</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.005</Min>
+            <Max>2.0</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>CMIN</Instruction>
+        <Name>Cell-under voltage protection switch-off</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1.8</Min>
+            <Max>4.0</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>MINH</Instruction>
+        <Name>Over- voltage switch-off hysteresis per cell</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.005</Min>
+            <Max>2.0</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>CHAR</Instruction>
+        <Name>Cell End of charging voltage</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>2.0</Min>
+            <Max>4.30</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>CHIS</Instruction>
+        <Name>End of charging voltage hysteresis per cell</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.005</Min>
+            <Max>2.0</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Cell">
+    <Instruction>RAZL</Instruction>
+        <Name>Cells max difference</Name>
+        <Description>Returns voltage value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.005</Min>
+            <Max>1.0</Max>
+        </Range>
+        <Return>
+            <Description>volts</Description>
+            <Unit>volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Temperature">
+    <Instruction>TMAX</Instruction>
+        <Name>cell over temperature switch-off</Name>
+        <Description>cell over temperature switch-off</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>-20</Min>
+            <Max>65</Max>
+        </Range>
+        <Return>
+            <Description>temperature</Description>
+            <Unit>celcius</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="Temperature">
+    <Instruction>TMIN</Instruction>
+        <Name>Under-temperature charging disable</Name>
+        <Description>Under-temperature charging disable</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>-30</Min>
+            <Max>65</Max>
+        </Range>
+        <Return>
+            <Description>temperature</Description>
+            <Unit>celcius</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="Temperature">
+    <Instruction>TBAL</Instruction>
+        <Name>BMS over-temperature switch-off</Name>
+        <Description>BMS over-temperature switch-off</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>-20</Min>
+            <Max>65</Max>
+        </Range>
+        <Return>
+            <Description>temperature</Description>
+            <Unit>celcius</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="Temperature">
+    <Instruction>BMTH</Instruction>
+        <Name>BMS over temperature switch-off hysteresis</Name>
+        <Description>BMS over temperature switch-off hysteresis</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1</Min>
+            <Max>30</Max>
+        </Range>
+        <Return>
+            <Description>temperature</Description>
+            <Unit>celcius</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="Amperage">
+    <Instruction>IOFF</Instruction>
+        <Name>Current measurement zero offset</Name>
+        <Description>Current measurement zero offset</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>-2.0</Min>
+            <Max>2.0</Max>
+        </Range>
+        <Return>
+            <Description>current in amps</Description>
+            <Unit>Amps</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="Amperage">
+    <Instruction>IOJA</Instruction>
+        <Name>Voltage to current coefficient</Name>
+        <Description>Voltage to current coefficient</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.0005</Min>
+            <Max>0.5</Max>
+        </Range>
+        <Return>
+            <Description>coefficient</Description>
+            <Unit>mu</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Pack">
+    <Instruction>CYCL</Instruction>
+        <Name>Number of full battery pack cycles</Name>
+        <Description>Number of full battery pack cycles</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0</Min>
+            <Max>8000</Max>
+        </Range>
+        <Return>
+            <Description>battery pack cycles</Description>
+            <Unit>count</Unit>
+            <Value>integer</Value>
+        </Return>
+    </Command>
+    <Command category="Pack">
+    <Instruction>CAPA</Instruction>
+        <Name>Battery pack capacity</Name>
+        <Description>Battery pack capacity</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1.0</Min>
+            <Max>5000.0</Max>
+        </Range>
+        <Return>
+            <Description>capacity in Amp hours</Description>
+            <Unit>Amps</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Pack">
+    <Instruction>CHEM</Instruction>
+        <Name>Li-ion chemistry</Name>
+        <Description>Li-ion chemistry</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1</Min>
+            <Max>5</Max>
+        </Range>
+        <Return>
+            <Description>chemistry selection via lookup</Description>
+            <Unit>identity</Unit>
+            <Value>unsigned_char</Value>
+        </Return>
+    </Command>
+    <Command category="SOC">
+    <Instruction>SOCH</Instruction>
+        <Name>SOC end of charge hysteresis</Name>
+        <Description>SOC end of charge hysteresis</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.005</Min>
+            <Max>0.99</Max>
+        </Range>
+        <Return>
+            <Description>Returns float value 0 – 1.0</Description>
+            <Unit>percent</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="SOC">
+    <Instruction>SOCS</Instruction>
+        <Name>SOC manual re-set</Name>
+        <Description>SOC manual re-set</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.01</Min>
+            <Max>1.00</Max>
+        </Range>
+        <Return>
+            <Description>Returns float value 0 – 1.0</Description>
+            <Unit>percent</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>CHAC</Instruction>
+        <Name>Charge coefficient (0-3C)</Name>
+        <Description>Charge coefficient (0-3C)</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.01</Min>
+            <Max>1.00</Max>
+        </Range>
+        <Return>
+            <Description>Returns float value 0-3.0 (default 0.6)</Description>
+            <Unit>mu</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>DCHC</Instruction>
+        <Name>Discharge coefficient (0-3C)</Name>
+        <Description>Discharge coefficient (0-3C)</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0.01</Min>
+            <Max>3.0</Max>
+        </Range>
+        <Return>
+            <Description>Returns float value 0-3.0 (default 1.5) </Description>
+            <Unit>mu</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>SISN</Instruction>
+        <Name>Number of inverter devices on the bus</Name>
+        <Description>Number of inverter devices on the bus</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1</Min>
+            <Max>6</Max>
+        </Range>
+        <Return>
+            <Description>default is 1</Description>
+            <Unit>count</Unit>
+            <Value>unsigned_char</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>MAXC</Instruction>
+        <Name>Maximum charge current per inverter device</Name>
+        <Description>Maximum charge current per inverter device</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>5.0</Min>
+            <Max>345.0</Max>
+        </Range>
+        <Return>
+            <Description>amperage per inverter</Description>
+            <Unit>Amps</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>MAXD</Instruction>
+        <Name>Maximum discharge current per inverter device</Name>
+        <Description>Maximum discharge current per inverter device</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>5.0</Min>
+            <Max>345.0</Max>
+        </Range>
+        <Return>
+            <Description>amperage per inverter</Description>
+            <Unit>Amps</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>CLOW</Instruction>
+        <Name>cell under-voltage discharge protection</Name>
+        <Description>cell under-voltage discharge protection</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1.8</Min>
+            <Max>4.20</Max>
+        </Range>
+        <Return>
+            <Description>voltage per cell</Description>
+            <Unit>Volts</Unit>
+            <Value>float</Value>
+        </Return>
+    </Command>
+    <Command category="Victron">
+    <Instruction>CANF</Instruction>
+        <Name>CAN Frequency</Name>
+        <Description>CAN Frequency</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>1</Min>
+            <Max>2</Max>
+        </Range>
+        <Return>
+            <Description>1 is 250 kb/s 2 is 500 kb/s</Description>
+            <Unit>identity</Unit>
+            <Value>unsigned_char</Value>
+        </Return>
+    </Command>
+    <Command category="Error">
+    <Instruction>VMAX</Instruction>
+        <Name>Number of exceeded values of CMAX</Name>
+        <Description>Number of exceeded values of CMAX</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0</Min>
+            <Max>8000</Max>
+        </Range>
+        <Return>
+            <Description>Count of cycles of cells over max voltage</Description>
+            <Unit>count</Unit>
+            <Value>integer</Value>
+        </Return>
+    </Command>
+    <Command category="Error">
+    <Instruction>VMIN</Instruction>
+        <Name>Number of exceeded values of CMIN</Name>
+        <Description>Number of exceeded values of CMIN</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>0</Min>
+            <Max>8000</Max>
+        </Range>
+        <Return>
+            <Description>Count of cycles of cells under minimum voltage</Description>
+            <Unit>count</Unit>
+            <Value>integer</Value>
+        </Return>
+    </Command>
+    <Command category="BMS">
+    <Instruction>SWVR</Instruction>
+        <Name>BMS software version</Name>
+        <Description>BMS software version</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Description>Current version of software on BMS</Description>
+            <Unit>Description</Unit>
+            <Value>string</Value>
+        </Return>
+    </Command>
+    <Command category="BMS">
+    <Instruction>HWVR</Instruction>
+        <Name>BMS hardware version</Name>
+        <Description>BMS hardware version</Description>
+        <ReadOnly>true</ReadOnly>
+        <Range>null</Range>
+        <Return>
+            <Description>Hardware revision of BMS</Description>
+            <Unit>Description</Unit>
+            <Value>string</Value>
+        </Return>
+    </Command>
+    <Command category="BMS">
+    <Instruction>EAVC</Instruction>
+        <Name>Even cells calibration value</Name>
+        <Description>Even cells calibration value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>-0.0003</Min>
+            <Max>0.0003</Max>
+        </Range>
+        <Return>
+            <Description>even cell calibration value in volts</Description>
+            <Unit>volts</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="BMS">
+    <Instruction>ODDC</Instruction>
+        <Name>Odd cells calibration value</Name>
+        <Description>Odd cells calibration value</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>-0.0003</Min>
+            <Max>0.0003</Max>
+        </Range>
+        <Return>
+            <Description>odd cell calibration value in volts</Description>
+            <Unit>volts</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+    <Command category="BMS">
+    <Instruction>REFC</Instruction>
+        <Name>ADC reference voltage 5.000 V +/- 3 mV</Name>
+        <Description>ADC reference voltage 5.000 V +/- 3 mV</Description>
+        <ReadOnly>false</ReadOnly>
+        <Range>
+            <Min>4.007</Min>
+            <Max>5.003</Max>
+        </Range>
+        <Return>
+            <Description></Description>
+            <Unit>volts</Unit>
+            <Value>signed_float</Value>
+        </Return>
+    </Command>
+</Library>
