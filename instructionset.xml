@@ -1,7 +1,7 @@
 
 <Library>
-    <Command category="Identification">
-        <Instruction>*IDN</Instruction>
+    <Command Category="Identification">
+        <Instruction>_IDN</Instruction>
         <Name>Identification</Name>
         <Description>Answers REC BMS xxx where xxx is the type of BMS</Description>
         <ReadOnly>true</ReadOnly>
@@ -12,7 +12,7 @@
             <Unit>Description</Unit>
         </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>LCD1</Instruction>
         <Name>Main_Data_1</Name>
         <Description>First answer is 28 how many byte data will be sent and then data message follows as 7 float values:</Description>
@@ -71,7 +71,7 @@
             </Array>
         </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>LCD3</Instruction>
         <Name>Main_Data_3</Name>
         <Description>First answer is 8 how many byte data will be sent and then data message follows as 8 byte values:</Description>
@@ -136,7 +136,7 @@
             </Array>
         </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>CELL</Instruction>
         <Name>Cell Voltages</Name>
         <Description>BMS first responds with how many BMS units are connected, then it sends the values of the cells configured in float Value</Description>
@@ -159,7 +159,7 @@
             </Array>
         </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>PTEM</Instruction>
         <Name>Cell temperatures</Name>
         <Description>BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value</Description>
@@ -182,7 +182,7 @@
             </Array>
         </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>RINT</Instruction>
             <Name>Cell internal DC resistance</Name>
             <Description>BMS first responds with how many BMS units are connected then it sends the values in float Value</Description>
@@ -205,7 +205,7 @@
                 </Array>
             </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>BTEM</Instruction>
             <Name>BMS temperature</Name>
             <Description>BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.</Description>
@@ -228,7 +228,7 @@
                 </Array>
             </Return>
     </Command>
-    <Command category="Information">
+    <Command Category="Information">
         <Instruction>ERRO</Instruction>
             <Name>Error number description array</Name>
             <Description>First answer is 4 how many byte data will be sent and then data message follows as 4 byte values.</Description>
@@ -269,7 +269,7 @@
                 </Array>
             </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>BVOL</Instruction>
         <Name>Balance end voltage</Name>
         <Description>Returns voltage value</Description>
@@ -284,7 +284,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>BMIN</Instruction>
         <Name>Balance start voltage</Name>
         <Description>Returns voltage value</Description>
@@ -299,7 +299,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>CMAX</Instruction>
         <Name>Cell over-voltage switch-off</Name>
         <Description>Returns voltage value</Description>
@@ -314,7 +314,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>MAXH</Instruction>
         <Name>Over-voltage switch-off hysteresis per cell</Name>
         <Description>Returns voltage value</Description>
@@ -329,7 +329,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>CMIN</Instruction>
         <Name>Cell-under voltage protection switch-off</Name>
         <Description>Returns voltage value</Description>
@@ -344,7 +344,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>MINH</Instruction>
         <Name>Over- voltage switch-off hysteresis per cell</Name>
         <Description>Returns voltage value</Description>
@@ -359,7 +359,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>CHAR</Instruction>
         <Name>Cell End of charging voltage</Name>
         <Description>Returns voltage value</Description>
@@ -374,7 +374,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>CHIS</Instruction>
         <Name>End of charging voltage hysteresis per cell</Name>
         <Description>Returns voltage value</Description>
@@ -389,7 +389,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Cell">
+    <Command Category="Cell">
     <Instruction>RAZL</Instruction>
         <Name>Cells max difference</Name>
         <Description>Returns voltage value</Description>
@@ -404,7 +404,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Temperature">
+    <Command Category="Temperature">
     <Instruction>TMAX</Instruction>
         <Name>cell over temperature switch-off</Name>
         <Description>cell over temperature switch-off</Description>
@@ -419,7 +419,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="Temperature">
+    <Command Category="Temperature">
     <Instruction>TMIN</Instruction>
         <Name>Under-temperature charging disable</Name>
         <Description>Under-temperature charging disable</Description>
@@ -434,7 +434,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="Temperature">
+    <Command Category="Temperature">
     <Instruction>TBAL</Instruction>
         <Name>BMS over-temperature switch-off</Name>
         <Description>BMS over-temperature switch-off</Description>
@@ -449,7 +449,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="Temperature">
+    <Command Category="Temperature">
     <Instruction>BMTH</Instruction>
         <Name>BMS over temperature switch-off hysteresis</Name>
         <Description>BMS over temperature switch-off hysteresis</Description>
@@ -464,7 +464,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="Amperage">
+    <Command Category="Amperage">
     <Instruction>IOFF</Instruction>
         <Name>Current measurement zero offset</Name>
         <Description>Current measurement zero offset</Description>
@@ -479,7 +479,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="Amperage">
+    <Command Category="Amperage">
     <Instruction>IOJA</Instruction>
         <Name>Voltage to current coefficient</Name>
         <Description>Voltage to current coefficient</Description>
@@ -494,7 +494,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Pack">
+    <Command Category="Pack">
     <Instruction>CYCL</Instruction>
         <Name>Number of full battery pack cycles</Name>
         <Description>Number of full battery pack cycles</Description>
@@ -509,7 +509,7 @@
             <Value>integer</Value>
         </Return>
     </Command>
-    <Command category="Pack">
+    <Command Category="Pack">
     <Instruction>CAPA</Instruction>
         <Name>Battery pack capacity</Name>
         <Description>Battery pack capacity</Description>
@@ -524,7 +524,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Pack">
+    <Command Category="Pack">
     <Instruction>CHEM</Instruction>
         <Name>Li-ion chemistry</Name>
         <Description>Li-ion chemistry</Description>
@@ -539,7 +539,7 @@
             <Value>unsigned_char</Value>
         </Return>
     </Command>
-    <Command category="SOC">
+    <Command Category="SOC">
     <Instruction>SOCH</Instruction>
         <Name>SOC end of charge hysteresis</Name>
         <Description>SOC end of charge hysteresis</Description>
@@ -554,7 +554,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="SOC">
+    <Command Category="SOC">
     <Instruction>SOCS</Instruction>
         <Name>SOC manual re-set</Name>
         <Description>SOC manual re-set</Description>
@@ -569,7 +569,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>CHAC</Instruction>
         <Name>Charge coefficient (0-3C)</Name>
         <Description>Charge coefficient (0-3C)</Description>
@@ -584,7 +584,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>DCHC</Instruction>
         <Name>Discharge coefficient (0-3C)</Name>
         <Description>Discharge coefficient (0-3C)</Description>
@@ -599,7 +599,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>SISN</Instruction>
         <Name>Number of inverter devices on the bus</Name>
         <Description>Number of inverter devices on the bus</Description>
@@ -614,7 +614,7 @@
             <Value>unsigned_char</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>MAXC</Instruction>
         <Name>Maximum charge current per inverter device</Name>
         <Description>Maximum charge current per inverter device</Description>
@@ -629,7 +629,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>MAXD</Instruction>
         <Name>Maximum discharge current per inverter device</Name>
         <Description>Maximum discharge current per inverter device</Description>
@@ -644,7 +644,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>CLOW</Instruction>
         <Name>cell under-voltage discharge protection</Name>
         <Description>cell under-voltage discharge protection</Description>
@@ -659,7 +659,7 @@
             <Value>float</Value>
         </Return>
     </Command>
-    <Command category="Victron">
+    <Command Category="Victron">
     <Instruction>CANF</Instruction>
         <Name>CAN Frequency</Name>
         <Description>CAN Frequency</Description>
@@ -674,7 +674,7 @@
             <Value>unsigned_char</Value>
         </Return>
     </Command>
-    <Command category="Error">
+    <Command Category="Error">
     <Instruction>VMAX</Instruction>
         <Name>Number of exceeded values of CMAX</Name>
         <Description>Number of exceeded values of CMAX</Description>
@@ -689,7 +689,7 @@
             <Value>integer</Value>
         </Return>
     </Command>
-    <Command category="Error">
+    <Command Category="Error">
     <Instruction>VMIN</Instruction>
         <Name>Number of exceeded values of CMIN</Name>
         <Description>Number of exceeded values of CMIN</Description>
@@ -704,7 +704,7 @@
             <Value>integer</Value>
         </Return>
     </Command>
-    <Command category="BMS">
+    <Command Category="BMS">
     <Instruction>SWVR</Instruction>
         <Name>BMS software version</Name>
         <Description>BMS software version</Description>
@@ -716,7 +716,7 @@
             <Value>string</Value>
         </Return>
     </Command>
-    <Command category="BMS">
+    <Command Category="BMS">
     <Instruction>HWVR</Instruction>
         <Name>BMS hardware version</Name>
         <Description>BMS hardware version</Description>
@@ -728,7 +728,7 @@
             <Value>string</Value>
         </Return>
     </Command>
-    <Command category="BMS">
+    <Command Category="BMS">
     <Instruction>EAVC</Instruction>
         <Name>Even cells calibration value</Name>
         <Description>Even cells calibration value</Description>
@@ -743,7 +743,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="BMS">
+    <Command Category="BMS">
     <Instruction>ODDC</Instruction>
         <Name>Odd cells calibration value</Name>
         <Description>Odd cells calibration value</Description>
@@ -758,7 +758,7 @@
             <Value>signed_float</Value>
         </Return>
     </Command>
-    <Command category="BMS">
+    <Command Category="BMS">
     <Instruction>REFC</Instruction>
         <Name>ADC reference voltage 5.000 V +/- 3 mV</Name>
         <Description>ADC reference voltage 5.000 V +/- 3 mV</Description>
