@@ -255,7 +255,7 @@ Param($value)
             $iO = Get-BMSInstruction $instruction
         }
         catch {
-            Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors."
+            Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors.")
         }
     }
    
@@ -310,129 +310,134 @@ Param($value)
     
     #return the message
     return $message -join ""
+    }
 }
 
 
 Function Invoke-BMSCommunication {
-    [cmdletbinding()]
-    param($message)
-
-    #trap all errors.
-    trap {
+[cmdletbinding()]
+Param($message)
+    begin {
+        #trap all errors.
+        trap {
         Write-Error "Something died! Closing COM port."
         $port.Close()
         break
-    }
-
-    #Define a watch dog object to use in serial communication timeouts.
-    $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
-    #convert the hex string to a byte array.
-    $bytes = Convert-HexToByteArray ($message -join "")
-    #load configuration metadata for comm session
-    $config = Get-BMSConfigMeta
-    #define array for return data stream
-    $Stream = New-Object System.Collections.Generic.List[System.Object]
-    #enumerate the configurable list from the metadata
-    #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
-    $SerialConfigurables = $config.client.psobject.properties.name
-    #create a new serial port object.
-    $Port = new-Object System.IO.Ports.SerialPort
-
-    #set properties in the serial port.
-    try {
-        foreach ($item in $SerialConfigurables) {
-            $port.$item = $config.Client.$item
         }
     }
-    catch {
-        Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
-    }
     
-    
-    #start the timer for transmit event.
-    $WatchDog.Start()
-    try {
-        #open the port
-        $port.Open() 
+    process {
+        #Define a watch dog object to use in serial communication timeouts.
+        $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
+        #convert the hex string to a byte array.
+        $bytes = Convert-HexToByteArray ($message -join "")
+        #load configuration metadata for comm session
+        $config = Get-BMSConfigMeta
+        #define array for return data stream
+        $Stream = New-Object System.Collections.Generic.List[System.Object]
+        #enumerate the configurable list from the metadata
+        #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
+        $SerialConfigurables = $config.client.psobject.properties.name
+        #create a new serial port object.
+        $Port = new-Object System.IO.Ports.SerialPort
 
-        #clear existing buffer, just in case something is sending on the line
-        #this could probably be built more robust, but for now it's at least an acknowledgement that the line should be clear.
-        $port.ReadExisting() | Out-Null
-        
-        #Write the message on the line. Bon Voyage!
-        Write-Verbose ("Sending " + $bytes.count + " bytes on " + $port.PortName)
-        $port.Write([byte[]] $bytes, 0, ($bytes.count))
-        Write-Verbose "Sucessful TX of instruction"
-    }
-    catch {
-        #catch the rest of the errors related to opening serial ports.
-        $Error[0]
-        break
-    }
-
-    #stop the timer for transmit event.
-    $WatchDog.Stop()
-    Write-Verbose ("Serial TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-    #reset the timer for the next event.
-    $WatchDog.Reset()
-
-    #Wait a specified number of milliseconds. 250ms is the default configured in metadata.
-    Start-Sleep -m $config.Session.SessionThrottle
-    
-    #zzz todo
-    #modify this stream parser so it's smarter
-    #instead of exception at end of buffer,
-    #try reading the stream and reading ahead only the bytes indicated in the stream 
-    #ah, maybe eventually.
-
-    #do loop for collecting data bytes off the wire. There is an inherent expectation/assumption that there is only
-    #one response on the wire expected at a time. This connection is not chatty at all.
-    
-    #start the timer for the receieve event.
-    $WatchDog.Start()
-    do {
-        #null this iteration of data collection in loop
-        $Data = $null
+        #set properties in the serial port.
         try {
-            #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
-            #with the serial port setup.
-            $Data = "{0:x2}" -f $port.ReadByte()
-            
-            #if there's data returned, add to return stream.
-            if ($Data)
-            {
-                #add byte to the array.
-                $Stream.Add($Data)
+            foreach ($item in $SerialConfigurables) {
+                $port.$item = $config.Client.$item
             }
         }
-        catch [System.TimeoutException]{
-            #this is how the do loop ends right now. we can do better. see the zzz todo about intelligent stream parsing.
-            
-            #clean up the port and report our findings.
-            Write-Verbose "Caught end of buffer exception"
-            $port.Close()
-            $WatchDog.Stop()
-            Write-Verbose ("Closed Port " + $port.PortName)
-            Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
-            Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-            $WatchDog.Reset()
-            Write-Verbose "Returning stream"
-            return $Stream
+        catch {
+            Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
         }
-    } until ($WatchDog.ElapsedMilliseconds -ge $config.Session.SessionTimeout)
-    #} until ($Data -eq $null)
+        
+        
+        #start the timer for transmit event.
+        $WatchDog.Start()
+        try {
+            #open the port
+            $port.Open() 
 
-    #this exit condition is one where watchdog caught the hard timeout.
-    #clean up the port and report our findings.
-    Write-Warning ("Serial timeout occured. Hard stop at " + $config.Session.SessionTimeout + " milliseconds")
-    $port.Close()
-    $WatchDog.Stop()
-    Write-Verbose ("Closed Port " + $port.PortName)
-    Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
-    Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-    $WatchDog.Reset()
-    Write-Verbose "Returning stream"
-    return $Stream
+            #clear existing buffer, just in case something is sending on the line
+            #this could probably be built more robust, but for now it's at least an acknowledgement that the line should be clear.
+            $port.ReadExisting() | Out-Null
+            
+            #Write the message on the line. Bon Voyage!
+            Write-Verbose ("Sending " + $bytes.count + " bytes on " + $port.PortName)
+            $port.Write([byte[]] $bytes, 0, ($bytes.count))
+            Write-Verbose "Sucessful TX of instruction"
+        }
+        catch {
+            #catch the rest of the errors related to opening serial ports.
+            $Error[0]
+            break
+        }
+
+        #stop the timer for transmit event.
+        $WatchDog.Stop()
+        Write-Verbose ("Serial TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+        #reset the timer for the next event.
+        $WatchDog.Reset()
+
+        #Wait a specified number of milliseconds. 250ms is the default configured in metadata.
+        Start-Sleep -m $config.Session.SessionThrottle
+        
+        #zzz todo
+        #modify this stream parser so it's smarter
+        #instead of exception at end of buffer,
+        #try reading the stream and reading ahead only the bytes indicated in the stream 
+        #ah, maybe eventually.
+
+        #do loop for collecting data bytes off the wire. There is an inherent expectation/assumption that there is only
+        #one response on the wire expected at a time. This connection is not chatty at all.
+        
+        #start the timer for the receieve event.
+        $WatchDog.Start()
+        do {
+            #null this iteration of data collection in loop
+            $Data = $null
+            try {
+                #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
+                #with the serial port setup.
+                $Data = "{0:x2}" -f $port.ReadByte()
+                
+                #if there's data returned, add to return stream.
+                if ($Data)
+                {
+                    #add byte to the array.
+                    $Stream.Add($Data)
+                }
+            }
+            catch [System.TimeoutException]{
+                #this is how the do loop ends right now. we can do better. see the zzz todo about intelligent stream parsing.
+                
+                #clean up the port and report our findings.
+                Write-Verbose "Caught end of buffer exception"
+                $port.Close()
+                $WatchDog.Stop()
+                Write-Verbose ("Closed Port " + $port.PortName)
+                Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
+                Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+                $WatchDog.Reset()
+                Write-Verbose "Returning stream"
+                return $Stream
+            }
+        } until ($WatchDog.ElapsedMilliseconds -ge $config.Session.SessionTimeout)
+        #} until ($Data -eq $null)
+
+        #this exit condition is one where watchdog caught the hard timeout.
+        #clean up the port and report our findings.
+        Write-Warning ("Serial timeout occured. Hard stop at " + $config.Session.SessionTimeout + " milliseconds")
+        $port.Close()
+        $WatchDog.Stop()
+        Write-Verbose ("Closed Port " + $port.PortName)
+        Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
+        Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+        $WatchDog.Reset()
+        Write-Verbose "Returning stream"
+        return $Stream
+    }
+    
 }
 
 Function New-BMSConversation
