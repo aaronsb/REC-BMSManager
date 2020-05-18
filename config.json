@@ -1,16 +1,16 @@
 {
     "Client": {
         "PortName": "COM6",
-        "BaudRate": "56000",
+        "BaudRate": 56000,
         "Parity": "None",
-        "DataBits": "8",
+        "DataBits": 8,
         "StopBits": "One",
-        "ReadTimeout": "250",
-        "WriteTimeout": "250"
+        "ReadTimeout": 250,
+        "WriteTimeout": 250
     },
     "Session": {
-        "SessionThrottle": "1500",
-        "SessionRetries": "4"
+        "SessionThrottle": 500,
+        "SessionTimeout": 5000
     },
     "Message": {
         "Components": {
