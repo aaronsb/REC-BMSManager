@@ -1,0 +1,27 @@
+{
+    "Client": {
+        "PortName": "COM6",
+        "BaudRate": "56000",
+        "Parity": "None",
+        "DataBits": "8",
+        "StopBits": "One",
+        "ReadTimeout": "250",
+        "WriteTimeout": "250"
+    },
+    "Session": {
+        "SessionThrottle": "1500",
+        "SessionRetries": "4"
+    },
+    "Message": {
+        "Components": {
+            "STX": "55",
+            "DST": "01",
+            "SND": "00",
+            "LEN": "00",
+            "MSG": null,
+            "QRY": "3F",
+            "CRC": "0000",
+            "ETX": "AA"
+        }
+    }
+}

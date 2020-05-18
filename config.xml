@@ -1,6 +1,10 @@
 <Constructor>
     <Client>
         <SerialPort>COM6</SerialPort>
+        <FlowRate>56000</FlowRate>
+        <Parity>None</Parity>
+        <DataBits>8</DataBits>
+        <StopBits>one</StopBits>
     </Client>
     <Message>
         <Components>

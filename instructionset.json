@@ -1,0 +1,833 @@
+{
+    "Command": [
+        {
+            "Instruction": "_IDN",
+            "Name": "Identification",
+            "Description": "Answers REC BMS xxx where xxx is the type of BMS",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Description": "Device identification",
+                "Value": "string",
+                "Unit": "Description"
+            },
+            "Category": "Identification"
+        },
+        {
+            "Instruction": "LCD1",
+            "Name": "Main_Data_1",
+            "Description": "First answer is 28 how many byte data will be sent and then data message follows as 7 float values:",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "message length in bytes",
+                            "Unit": "count",
+                            "Value": "integer",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "min cell voltage",
+                            "Unit": "volts",
+                            "Value": "float",
+                            "Position": 1
+                        },
+                        {
+                            "Description": "max cell voltage",
+                            "Unit": "volts",
+                            "Value": "float",
+                            "Position": 2
+                        },
+                        {
+                            "Description": "current",
+                            "Unit": "volts",
+                            "Value": "float",
+                            "Position": 3
+                        },
+                        {
+                            "Description": "max temperature",
+                            "Unit": "celcius",
+                            "Value": "float",
+                            "Position": 4
+                        },
+                        {
+                            "Description": "pack voltage",
+                            "Unit": "volts",
+                            "Value": "float",
+                            "Position": 5
+                        },
+                        {
+                            "Description": "SOC (state of charge) interval 0-1-> 1=100%",
+                            "Unit": "percent",
+                            "Value": "float",
+                            "Position": 6
+                        },
+                        {
+                            "Description": "SOH (state of health) interval 0-1-> 1=100%",
+                            "Unit": "percent",
+                            "Value": "float",
+                            "Position": 7
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "LCD3",
+            "Name": "Main_Data_3",
+            "Description": "First answer is 8 how many byte data will be sent and then data message follows as 8 byte values:",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "byte count of message payload",
+                            "Unit": "count",
+                            "Value": "int",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "min cell BMS address",
+                            "Unit": "identity_bms",
+                            "Value": "int",
+                            "Position": 1
+                        },
+                        {
+                            "Description": "min cell number",
+                            "Unit": "identity_cell",
+                            "Value": "int",
+                            "Position": 2
+                        },
+                        {
+                            "Description": "max cell BMS address",
+                            "Unit": "identity_bms",
+                            "Value": "int",
+                            "Position": 3
+                        },
+                        {
+                            "Description": "max cell number",
+                            "Unit": "identity_cell",
+                            "Value": "int",
+                            "Position": 4
+                        },
+                        {
+                            "Description": "max temperature sense BMS address",
+                            "Unit": "identity_bms",
+                            "Value": "int",
+                            "Position": 5
+                        },
+                        {
+                            "Description": "max temperature sense number",
+                            "Unit": "identity_cell",
+                            "Value": "int",
+                            "Position": 6
+                        },
+                        {
+                            "Description": "Ah MSB",
+                            "Unit": "AmpHour",
+                            "Value": "int",
+                            "Position": 7
+                        },
+                        {
+                            "Description": "Ah LSB",
+                            "Unit": "AmpHour",
+                            "Value": "int",
+                            "Position": 8
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "CELL",
+            "Name": "Cell Voltages",
+            "Description": "BMS first responds with how many BMS units are connected, then it sends the values of the cells configured in float Value",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "number of BMS units",
+                            "Unit": "count",
+                            "Value": "int",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "cell voltage",
+                            "Unit": "voltage",
+                            "Value": "float",
+                            "Position": "template"
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "PTEM",
+            "Name": "Cell temperatures",
+            "Description": "BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "number of BMS units",
+                            "Unit": "count",
+                            "Value": "int",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "cell temperature",
+                            "Unit": "celcius",
+                            "Value": "float",
+                            "Position": "template"
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "RINT",
+            "Name": "Cell internal DC resistance",
+            "Description": "BMS first responds with how many BMS units are connected then it sends the values in float Value",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "number of BMS units",
+                            "Unit": "count",
+                            "Value": "int",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "cell resistance",
+                            "Unit": "ohms",
+                            "Value": "float",
+                            "Position": "template"
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "BTEM",
+            "Name": "BMS temperature",
+            "Description": "BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "number of BMS units",
+                            "Unit": "count",
+                            "Value": "int",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "BMS temperature",
+                            "Unit": "celcius",
+                            "Value": "float",
+                            "Position": "template"
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "ERRO",
+            "Name": "Error number description array",
+            "Description": "First answer is 4 how many byte data will be sent and then data message follows as 4 byte values.",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Array": {
+                    "Value": [
+                        {
+                            "Description": "data bytes to be sent",
+                            "Unit": "count",
+                            "Value": "byte",
+                            "Position": 0
+                        },
+                        {
+                            "Description": "0 – no error, 1 – error",
+                            "Unit": "boolean",
+                            "Value": "binary",
+                            "Position": 1
+                        },
+                        {
+                            "Description": "BMS unit",
+                            "Unit": "identity_bms",
+                            "Value": "int",
+                            "Position": 2
+                        },
+                        {
+                            "Description": "error number (1-16)",
+                            "Unit": "identity",
+                            "Value": "int",
+                            "Position": 3
+                        },
+                        {
+                            "Description": "number of the cell, temperature sensor where the error occured",
+                            "Unit": "identity",
+                            "Value": "int",
+                            "Position": 4
+                        }
+                    ]
+                }
+            },
+            "Category": "Information"
+        },
+        {
+            "Instruction": "BVOL",
+            "Name": "Balance end voltage",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 2.5,
+                "Max": 4.3
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "BMIN",
+            "Name": "Balance start voltage",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 2.5,
+                "Max": 4.3
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "CMAX",
+            "Name": "Cell over-voltage switch-off",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 2,
+                "Max": 4.3
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "MAXH",
+            "Name": "Over-voltage switch-off hysteresis per cell",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.005,
+                "Max": 2
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "CMIN",
+            "Name": "Cell-under voltage protection switch-off",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1.8,
+                "Max": 4
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "MINH",
+            "Name": "Over- voltage switch-off hysteresis per cell",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.005,
+                "Max": 2
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "CHAR",
+            "Name": "Cell End of charging voltage",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 2,
+                "Max": 4.3
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "CHIS",
+            "Name": "End of charging voltage hysteresis per cell",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.005,
+                "Max": 2
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "RAZL",
+            "Name": "Cells max difference",
+            "Description": "Returns voltage value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.005,
+                "Max": 1
+            },
+            "Return": {
+                "Description": "volts",
+                "Unit": "volts",
+                "Value": "float"
+            },
+            "Category": "Cell"
+        },
+        {
+            "Instruction": "TMAX",
+            "Name": "cell over temperature switch-off",
+            "Description": "cell over temperature switch-off",
+            "ReadOnly": false,
+            "Range": {
+                "Min": -20,
+                "Max": 65
+            },
+            "Return": {
+                "Description": "temperature",
+                "Unit": "celcius",
+                "Value": "signed_float"
+            },
+            "Category": "Temperature"
+        },
+        {
+            "Instruction": "TMIN",
+            "Name": "Under-temperature charging disable",
+            "Description": "Under-temperature charging disable",
+            "ReadOnly": false,
+            "Range": {
+                "Min": -30,
+                "Max": 65
+            },
+            "Return": {
+                "Description": "temperature",
+                "Unit": "celcius",
+                "Value": "signed_float"
+            },
+            "Category": "Temperature"
+        },
+        {
+            "Instruction": "TBAL",
+            "Name": "BMS over-temperature switch-off",
+            "Description": "BMS over-temperature switch-off",
+            "ReadOnly": false,
+            "Range": {
+                "Min": -20,
+                "Max": 65
+            },
+            "Return": {
+                "Description": "temperature",
+                "Unit": "celcius",
+                "Value": "signed_float"
+            },
+            "Category": "Temperature"
+        },
+        {
+            "Instruction": "BMTH",
+            "Name": "BMS over temperature switch-off hysteresis",
+            "Description": "BMS over temperature switch-off hysteresis",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1,
+                "Max": 30
+            },
+            "Return": {
+                "Description": "temperature",
+                "Unit": "celcius",
+                "Value": "signed_float"
+            },
+            "Category": "Temperature"
+        },
+        {
+            "Instruction": "IOFF",
+            "Name": "Current measurement zero offset",
+            "Description": "Current measurement zero offset",
+            "ReadOnly": false,
+            "Range": {
+                "Min": -2,
+                "Max": 2
+            },
+            "Return": {
+                "Description": "current in amps",
+                "Unit": "Amps",
+                "Value": "signed_float"
+            },
+            "Category": "Amperage"
+        },
+        {
+            "Instruction": "IOJA",
+            "Name": "Voltage to current coefficient",
+            "Description": "Voltage to current coefficient",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.0005,
+                "Max": 0.5
+            },
+            "Return": {
+                "Description": "coefficient",
+                "Unit": "mu",
+                "Value": "float"
+            },
+            "Category": "Amperage"
+        },
+        {
+            "Instruction": "CYCL",
+            "Name": "Number of full battery pack cycles",
+            "Description": "Number of full battery pack cycles",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0,
+                "Max": 8000
+            },
+            "Return": {
+                "Description": "battery pack cycles",
+                "Unit": "count",
+                "Value": "integer"
+            },
+            "Category": "Pack"
+        },
+        {
+            "Instruction": "CAPA",
+            "Name": "Battery pack capacity",
+            "Description": "Battery pack capacity",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1,
+                "Max": 5000
+            },
+            "Return": {
+                "Description": "capacity in Amp hours",
+                "Unit": "Amps",
+                "Value": "float"
+            },
+            "Category": "Pack"
+        },
+        {
+            "Instruction": "CHEM",
+            "Name": "Li-ion chemistry",
+            "Description": "Li-ion chemistry",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1,
+                "Max": 5
+            },
+            "Return": {
+                "Description": "chemistry selection via lookup",
+                "Unit": "identity",
+                "Value": "unsigned_char"
+            },
+            "Category": "Pack"
+        },
+        {
+            "Instruction": "SOCH",
+            "Name": "SOC end of charge hysteresis",
+            "Description": "SOC end of charge hysteresis",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.005,
+                "Max": 0.99
+            },
+            "Return": {
+                "Description": "Returns float value 0 – 1.0",
+                "Unit": "percent",
+                "Value": "float"
+            },
+            "Category": "SOC"
+        },
+        {
+            "Instruction": "SOCS",
+            "Name": "SOC manual re-set",
+            "Description": "SOC manual re-set",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.01,
+                "Max": 1
+            },
+            "Return": {
+                "Description": "Returns float value 0 – 1.0",
+                "Unit": "percent",
+                "Value": "float"
+            },
+            "Category": "SOC"
+        },
+        {
+            "Instruction": "CHAC",
+            "Name": "Charge coefficient (0-3C)",
+            "Description": "Charge coefficient (0-3C)",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.01,
+                "Max": 1
+            },
+            "Return": {
+                "Description": "Returns float value 0-3.0 (default 0.6)",
+                "Unit": "mu",
+                "Value": "float"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "DCHC",
+            "Name": "Discharge coefficient (0-3C)",
+            "Description": "Discharge coefficient (0-3C)",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0.01,
+                "Max": 3
+            },
+            "Return": {
+                "Description": "Returns float value 0-3.0 (default 1.5)",
+                "Unit": "mu",
+                "Value": "float"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "SISN",
+            "Name": "Number of inverter devices on the bus",
+            "Description": "Number of inverter devices on the bus",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1,
+                "Max": 6
+            },
+            "Return": {
+                "Description": "default is 1",
+                "Unit": "count",
+                "Value": "unsigned_char"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "MAXC",
+            "Name": "Maximum charge current per inverter device",
+            "Description": "Maximum charge current per inverter device",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 5,
+                "Max": 345
+            },
+            "Return": {
+                "Description": "amperage per inverter",
+                "Unit": "Amps",
+                "Value": "float"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "MAXD",
+            "Name": "Maximum discharge current per inverter device",
+            "Description": "Maximum discharge current per inverter device",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 5,
+                "Max": 345
+            },
+            "Return": {
+                "Description": "amperage per inverter",
+                "Unit": "Amps",
+                "Value": "float"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "CLOW",
+            "Name": "cell under-voltage discharge protection",
+            "Description": "cell under-voltage discharge protection",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1.8,
+                "Max": 4.2
+            },
+            "Return": {
+                "Description": "voltage per cell",
+                "Unit": "Volts",
+                "Value": "float"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "CANF",
+            "Name": "CAN Frequency",
+            "Description": "CAN Frequency",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 1,
+                "Max": 2
+            },
+            "Return": {
+                "Description": "1 is 250 kb/s 2 is 500 kb/s",
+                "Unit": "identity",
+                "Value": "unsigned_char"
+            },
+            "Category": "Victron"
+        },
+        {
+            "Instruction": "VMAX",
+            "Name": "Number of exceeded values of CMAX",
+            "Description": "Number of exceeded values of CMAX",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0,
+                "Max": 8000
+            },
+            "Return": {
+                "Description": "Count of cycles of cells over max voltage",
+                "Unit": "count",
+                "Value": "integer"
+            },
+            "Category": "Error"
+        },
+        {
+            "Instruction": "VMIN",
+            "Name": "Number of exceeded values of CMIN",
+            "Description": "Number of exceeded values of CMIN",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 0,
+                "Max": 8000
+            },
+            "Return": {
+                "Description": "Count of cycles of cells under minimum voltage",
+                "Unit": "count",
+                "Value": "integer"
+            },
+            "Category": "Error"
+        },
+        {
+            "Instruction": "SWVR",
+            "Name": "BMS software version",
+            "Description": "BMS software version",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Description": "Current version of software on BMS",
+                "Unit": "Description",
+                "Value": "string"
+            },
+            "Category": "BMS"
+        },
+        {
+            "Instruction": "HWVR",
+            "Name": "BMS hardware version",
+            "Description": "BMS hardware version",
+            "ReadOnly": true,
+            "Range": null,
+            "Return": {
+                "Description": "Hardware revision of BMS",
+                "Unit": "Description",
+                "Value": "string"
+            },
+            "Category": "BMS"
+        },
+        {
+            "Instruction": "EAVC",
+            "Name": "Even cells calibration value",
+            "Description": "Even cells calibration value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": -0.0003,
+                "Max": 0.0003
+            },
+            "Return": {
+                "Description": "even cell calibration value in volts",
+                "Unit": "volts",
+                "Value": "signed_float"
+            },
+            "Category": "BMS"
+        },
+        {
+            "Instruction": "ODDC",
+            "Name": "Odd cells calibration value",
+            "Description": "Odd cells calibration value",
+            "ReadOnly": false,
+            "Range": {
+                "Min": -0.0003,
+                "Max": 0.0003
+            },
+            "Return": {
+                "Description": "odd cell calibration value in volts",
+                "Unit": "volts",
+                "Value": "signed_float"
+            },
+            "Category": "BMS"
+        },
+        {
+            "Instruction": "REFC",
+            "Name": "ADC reference voltage 5.000 V +/- 3 mV",
+            "Description": "ADC reference voltage 5.000 V +/- 3 mV",
+            "ReadOnly": false,
+            "Range": {
+                "Min": 4.007,
+                "Max": 5.003
+            },
+            "Return": {
+                "Description": "",
+                "Unit": "volts",
+                "Value": "signed_float"
+            },
+            "Category": "BMS"
+        }
+    ]
+}

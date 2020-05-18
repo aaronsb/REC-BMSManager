@@ -39,23 +39,62 @@ Function Convert-HexToByteArray {
 }
 
 Function Get-BMSInstructionList {
-    $object = [xml](gc .\instructionset.xml)
-    $object.Library.command | Select-Object -Property Instruction,Name,Category
+    $object = gc .\instructionset.json | ConvertFrom-Json
+    $object.command | Select-Object -Property Instruction,Name,Category
 }
 
 
 Function Get-BMSConfigMeta {
-    [xml](gc .\config.xml)
+    gc .\config.json | ConvertFrom-Json
 }
 
 Function Get-BMSInstruction {
-    param([Parameter(Mandatory=$true)]$instruction)
-    $object = [xml](gc .\instructionset.xml)
-    $instructionObject = $object.Library.Command | ?{$_.Instruction -match $instruction}
-    #small fix for butthole character *
-    if ($instructionObject.Instruction -eq "_IDN")
-    {$instructionObject.Instruction = "*IDN"}
-    $instructionObject
+    [CmdletBinding()]
+Param()
+    DynamicParam {
+ 
+        # Set the dynamic parameters' name
+        $ParameterName = 'Instruction'
+
+        # Create the dictionary
+        $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+
+        # Create the collection of attributes
+        $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+
+        # Create and set the parameters' attributes
+        $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
+        $ParameterAttribute.Mandatory = $true
+        $ParameterAttribute.Position = 1
+
+        # Add the attributes to the attributes collection
+        $AttributeCollection.Add($ParameterAttribute)
+
+        # Generate and set the ValidateSet
+        $arrSet = (Get-BMSInstructionList).Instruction
+        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
+
+        # Add the ValidateSet to the attributes collection
+        $AttributeCollection.Add($ValidateSetAttribute)
+
+        # Create and return the dynamic parameter
+        $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
+        $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
+        return $RuntimeParameterDictionary
+    }
+
+    begin {
+        $Instruction = $PSBoundParameters[$ParameterName]
+    }
+
+    process {
+        $object = gc .\instructionset.json | ConvertFrom-Json
+        $instructionObject = $object.Command | ?{$_.Instruction -match $instruction}
+        #small fix for butthole character *
+        if ($instructionObject.Instruction -eq "_IDN")
+        {$instructionObject.Instruction = "*IDN"}
+        $instructionObject
+    }
 }
 
 Function New-BMSMessage {
@@ -126,13 +165,13 @@ Param($value)
                 $instruction = New-Object System.Collections.Generic.List[System.Object]
 
                 #assemble the header, add to message.
-                $message.Add($config.Constructor.Message.Components.STX.ToLower())
-                $message.Add($config.Constructor.Message.Components.DST.ToLower())
-                $message.Add($config.Constructor.Message.Components.SND.ToLower())
+                $message.Add($config.Message.Components.STX.ToLower())
+                $message.Add($config.Message.Components.DST.ToLower())
+                $message.Add($config.Message.Components.SND.ToLower())
                 
                 #assemble the instruction subarray
                 $iO.Instruction.ToCharArray() | %{"{0:x}" -f [int16]$_} | %{$instruction.Add($_)}
-                $instruction.Add($config.constructor.message.components.QRY.ToLower())
+                $instruction.Add($config.message.components.QRY.ToLower())
                 
                 #count length of instruction bytes in payload, add to message.
                 $message.Add("{0:x2}" -f [int16]$instruction.count)
@@ -149,7 +188,7 @@ Param($value)
                 $message.Add($crc[1])
                 
                 #add end transmission
-                $message.Add($config.Constructor.Message.Components.ETX.ToLower())  
+                $message.Add($config.Message.Components.ETX.ToLower())  
             }
         }
         else {
@@ -160,3 +199,96 @@ Param($value)
     
 }
 
+
+Function Invoke-BMSCommunication {
+    param($message)
+    trap {
+        Write-Error "Something died! Closing COM port."
+        $port.Close()
+        break
+    }
+    $bytes = Convert-HexToByteArray ($message -join "")
+    
+    $config = Get-BMSConfigMeta
+    $SerialConfigurables = $config.client.psobject.properties.name
+    $port = new-Object System.IO.Ports.SerialPort 
+    foreach ($item in $SerialConfigurables) {
+        $port.$item = $config.Client.$item
+    }
+    
+    $port.Open()  
+    $port.ReadExisting() | Out-Null #clear existing buffer
+
+  
+    # Gets the data from the com port for the specified interval 
+    
+    $port.Write([byte[]] $bytes, 0, ($bytes.count))
+    Start-Sleep -m $config.Session.SessionThrottle
+
+    $Retry = 0
+    do {
+        $Data = $null
+        $Data = $port.ReadExisting()
+        $Retry++
+        if ($Data)
+        {
+            $port.Close()
+            return $Data
+        }
+        else
+        {
+            Write-Warning ("No response. Retry: " + $Retry)
+            Start-Sleep -m $config.Session.SessionThrottle
+            $Data = $port.ReadExisting()
+        }
+    } until ($Retry -ge $config.Session.Retries)
+    $port.Close()  
+}
+
+Function New-BMSComm
+{[CmdletBinding()]
+    Param()
+        DynamicParam {
+     
+            # Set the dynamic parameters' name
+            $ParameterName = 'Instruction'
+    
+            # Create the dictionary
+            $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+    
+            # Create the collection of attributes
+            $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+    
+            # Create and set the parameters' attributes
+            $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
+            $ParameterAttribute.Mandatory = $true
+            $ParameterAttribute.Position = 1
+    
+            # Add the attributes to the attributes collection
+            $AttributeCollection.Add($ParameterAttribute)
+    
+            # Generate and set the ValidateSet
+            $arrSet = (Get-BMSInstructionList).Instruction
+            $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
+    
+            # Add the ValidateSet to the attributes collection
+            $AttributeCollection.Add($ValidateSetAttribute)
+    
+            # Create and return the dynamic parameter
+            $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
+            $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
+            return $RuntimeParameterDictionary
+        }
+    
+        begin {
+            $Instruction = $PSBoundParameters[$ParameterName]
+        }
+    
+        process {
+            (Invoke-BMSCommunication (New-BMSMessage -Instruction $Instruction))
+        }
+}
+
+#$inst = ("LCD1","LCD3","CELL","PTEM","RINT","BTEM","ERRO")
+#$inst | %{New-BMSMessage -Instruction $_} | %{Invoke-BMSCommunication $_}
+#Invoke-BMSCommunication (New-BMSMessage -Instruction _IDN)
