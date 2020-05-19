@@ -9,8 +9,8 @@
         "WriteTimeout": 250
     },
     "Session": {
-        "SessionThrottle": 500,
-        "SessionTimeout": 5000
+        "SessionThrottle": 250,
+        "SessionTimeout": 1000
     },
     "Message": {
         "Components": {
