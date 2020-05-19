@@ -5,7 +5,7 @@
         "Parity": "None",
         "DataBits": 8,
         "StopBits": "One",
-        "ReadTimeout": 250,
+        "ReadTimeout": 750,
         "WriteTimeout": 250
     },
     "Session": {

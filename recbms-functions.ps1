@@ -1,4 +1,18 @@
 
+Class Message {
+    [String]$Name
+    [String]$Description
+    [String]$Type
+    [String]$Owner
+ 
+    [int]$Reboots
+ 
+    [void]Reboot(){
+          $this.Reboots ++
+    }
+}
+
+
 #REQUIRES -Version 3.0
 Function Get-CRC16($hexdata) {
 
@@ -142,7 +156,7 @@ Function Get-BMSConfigMeta {
 
 Function Get-BMSInstruction {
     [CmdletBinding()]
-Param()
+    Param()
     DynamicParam {
  
         # Set the dynamic parameters' name
@@ -199,6 +213,9 @@ Param()
         }
     }
 }
+
+
+
 
 Function New-BMSMessage {
 [CmdletBinding()]
@@ -267,13 +284,13 @@ Param($value)
     #instruction is just the instrction portion of the message.
     
     #instance two arrays, one for message, and one for the instruction only.
-    $message = New-Object System.Collections.Generic.List[System.Object]
+    $hexdata = New-Object System.Collections.Generic.List[System.Object]
     $instruction = New-Object System.Collections.Generic.List[System.Object]
 
     #assemble the header, add to message.
-    $message.Add($config.Message.Components.STX.ToLower())
-    $message.Add($config.Message.Components.DST.ToLower())
-    $message.Add($config.Message.Components.SND.ToLower())
+    $hexdata.Add($config.Message.Components.STX.ToLower())
+    $hexdata.Add($config.Message.Components.DST.ToLower())
+    $hexdata.Add($config.Message.Components.SND.ToLower())
     
     #assemble the instruction subarray
     $iO.Instruction.ToCharArray() | %{"{0:x}" -f [int16]$_} | %{$instruction.Add($_)}
@@ -281,6 +298,7 @@ Param($value)
     if ($value) {
         #zzz TODO: construct a "WRITE" message. For now, let's just concentrate on read only messages ;)
         #parse instruction set to package value being set here
+        $query = $false
         Write-Warning "Not Implemented. (yet!)"
         break
     }
@@ -289,34 +307,38 @@ Param($value)
         #no $value defined, so this will be a read only query.
         #add configured query value to subarray. It's default is am ASCII ? (0x3F)
         $instruction.Add($config.message.components.QRY.ToLower())
+        $query = $true
     }
 
     #count length of instruction bytes in payload, add to message.
-    $message.Add("{0:x2}" -f [int16]$instruction.count)
-    $instruction | %{$message.Add($_)}
-    
+    $hexdata.Add("{0:x2}" -f [int16]$instruction.count)
+    $instruction | %{$hexdata.Add($_)}
+
     #compute/add CRC
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
-    $crc = (Get-CRC16 ($message[1..($message.count)] -Join "")) -replace '..', "$& " -split " "
+    $crc = (Get-CRC16 ($hexdata[1..($hexdata.count)] -Join "")) -replace '..', "$& " -split " "
     
     #add First byte of CRC
-    $message.Add($crc[0])
+    $hexdata.Add($crc[0])
     
     #add second byte of CRC
-    $message.Add($crc[1])
+    $hexdata.Add($crc[1])
     
     #add end transmission
-    $message.Add($config.Message.Components.ETX.ToLower())  
+    $hexdata.Add($config.Message.Components.ETX.ToLower())  
     
-    #return the message
-    return $message -join ""
+    $messageDetail = ((Convert-HexToByteArray -HexString ($hexdata -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+
+    #return the message as a hash array
+    #next better version of this should be to define a custom class for this.
+    return @{"Instruction"=$io;"Hexdata"=$hexdata;"MessageDetail"=$messageDetail}
     }
 }
 
 
 Function Invoke-BMSCommunication {
 [cmdletbinding()]
-Param($message)
+Param($InstructionObject)
     begin {
         #trap all errors.
         trap {
@@ -330,7 +352,7 @@ Param($message)
         #Define a watch dog object to use in serial communication timeouts.
         $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
         #convert the hex string to a byte array.
-        $bytes = Convert-HexToByteArray ($message -join "")
+        $bytes = Convert-HexToByteArray ($InstructionObject.HexData -join "")
         #load configuration metadata for comm session
         $config = Get-BMSConfigMeta
         #define array for return data stream
@@ -493,3 +515,144 @@ Some placeholder stuff for testing.
 #$inst | %{New-BMSMessage -Instruction $_} | %{Invoke-BMSCommunication $_}
 #Invoke-BMSCommunication (New-BMSMessage -Instruction _IDN)
 #>
+
+Function Get-BMSParameter {
+    [CmdletBinding()]
+    Param()
+    DynamicParam {
+ 
+        # Set the dynamic parameters' name
+        $ParameterName = 'Instruction'
+
+        # Create the dictionary
+        $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+
+        # Create the collection of attributes
+        $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+
+        # Create and set the parameters' attributes
+        $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
+        $ParameterAttribute.Mandatory = $true
+        $ParameterAttribute.Position = 1
+
+        # Add the attributes to the attributes collection
+        $AttributeCollection.Add($ParameterAttribute)
+
+        # Generate and set the ValidateSet
+        # get just instruction names from the library
+        $arrSet = (Get-BMSInstructionList).Instruction
+        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
+
+        # Add the ValidateSet to the attributes collection
+        $AttributeCollection.Add($ValidateSetAttribute)
+
+        # Create and return the dynamic parameter
+        $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
+        $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
+        return $RuntimeParameterDictionary
+    }
+
+    begin {
+        #give dynamic parameter a friendly parameter name
+        $Instruction = $PSBoundParameters[$ParameterName]
+    }
+
+    process {
+        $MessageObject = New-BMSMessage -Instruction $Instruction
+        $BMSReturnedPayload = Invoke-BMSCommunication -InstructionObject $MessageObject
+        
+        switch ($MessageObject.Instruction.HandlerType)
+        {
+            String {
+                Write-Verbose "String Type Handler"
+                if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
+                {
+                    Throw "CRC FAILED"
+                }
+                New-BMSParameterFromByteStream $BMSReturnedPayload
+            }
+            Array  {
+                Write-Verbose "Array Type Handler"
+                if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
+                {
+                    Throw "CRC FAILED"
+                }
+            }
+            Range  {
+                Write-Verbose "Range Type Handler"
+                if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
+                {
+                    Throw "CRC FAILED"
+                }
+                New-BMSParameterFromByteStream $BMSReturnedPayload
+            }
+            Default  {}
+        }
+    }
+    
+}
+
+
+
+
+Function New-BMSParameterFromByteStream{
+    [CmdletBinding()]
+    param($HexString)
+
+    $ComputablePayloadLength = ([convert]::toint16($HexString[3],16) + 3)
+    $MessageStream = ($HexString[4..$ComputablePayloadLength])
+
+    ($MessageStream | ForEach-Object{[char][convert]::toint16($_,16)}) -join ""
+}
+
+
+Function Split-CompoundMessageStream
+{
+    [CmdletBinding()]
+    param($HexString)
+    $MultiPart = New-Object PSCustomObject
+    $ID = 0
+    $i = 0
+    $Part = New-Object System.Collections.Generic.List[System.Object]
+    foreach ($byte in $HexString)
+    {
+        $Part.Add($HexString[$i])
+        if ($HexString[$i] -match "aa")
+        {
+            if (($HexString[$i + 1]) -eq "55")
+            {
+                $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
+                $ID++
+                $Part = New-Object System.Collections.Generic.List[System.Object]
+                Write-Verbose "New Message Continues"
+            }
+            else
+            {
+                $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
+                Write-Verbose "No New Messages"
+            }
+        }
+        $i++
+    }
+    return $MultiPart
+}
+
+Function Verify-MessageCRC {
+    [CmdletBinding()]
+    param($HexString)
+    $ComputablePayloadLength = ([convert]::toint16($HexString[3],16) + 3)
+    $CRCTask = ($HexString[1..$ComputablePayloadLength]) -join ""
+    $OldCRC = ($HexString[($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
+    $NewCRC = (Get-CRC16 $CRCTask) -join ""
+    Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Recieved CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
+    if ($NewCRC -notmatch $OldCRC)
+    {
+        $false
+        Throw ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
+    }
+    else {
+        $true
+    }
+    #compute/add CRC
+    #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
+}
