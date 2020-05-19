@@ -8,11 +8,11 @@
             "Range": null,
             "Return": {
                 "Description": "Device identification",
-                "Value": "string",
-                "Unit": "Description"
+                "Unit": "Description",
+                "Value": "string"
             },
             "Category": "Identification",
-            "HandlerType": "String"
+            "Handler": "String"
         },
         {
             "Instruction": "LCD1",
@@ -29,55 +29,63 @@
                             "Description": "message length in bytes",
                             "Unit": "count",
                             "Value": "integer",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "min cell voltage",
                             "Unit": "volts",
                             "Value": "float",
-                            "Position": 1
+                            "Position": 1,
+                            "Part": 1
                         },
                         {
                             "Description": "max cell voltage",
                             "Unit": "volts",
                             "Value": "float",
-                            "Position": 2
+                            "Position": 2,
+                            "Part": 1
                         },
                         {
                             "Description": "current",
                             "Unit": "volts",
                             "Value": "float",
-                            "Position": 3
+                            "Position": 3,
+                            "Part": 1
                         },
                         {
                             "Description": "max temperature",
                             "Unit": "celcius",
                             "Value": "float",
-                            "Position": 4
+                            "Position": 4,
+                            "Part": 1
                         },
                         {
                             "Description": "pack voltage",
                             "Unit": "volts",
                             "Value": "float",
-                            "Position": 5
+                            "Position": 5,
+                            "Part": 1
                         },
                         {
                             "Description": "SOC (state of charge) interval 0-1-> 1=100%",
                             "Unit": "percent",
                             "Value": "float",
-                            "Position": 6
+                            "Position": 6,
+                            "Part": 1
                         },
                         {
                             "Description": "SOH (state of health) interval 0-1-> 1=100%",
                             "Unit": "percent",
                             "Value": "float",
-                            "Position": 7
+                            "Position": 7,
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "LCD3",
@@ -94,61 +102,70 @@
                             "Description": "byte count of message payload",
                             "Unit": "count",
                             "Value": "int",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "min cell BMS address",
                             "Unit": "identity_bms",
                             "Value": "int",
-                            "Position": 1
+                            "Position": 1,
+                            "Part": 1
                         },
                         {
                             "Description": "min cell number",
                             "Unit": "identity_cell",
                             "Value": "int",
-                            "Position": 2
+                            "Position": 2,
+                            "Part": 1
                         },
                         {
                             "Description": "max cell BMS address",
                             "Unit": "identity_bms",
                             "Value": "int",
-                            "Position": 3
+                            "Position": 3,
+                            "Part": 1
                         },
                         {
                             "Description": "max cell number",
                             "Unit": "identity_cell",
                             "Value": "int",
-                            "Position": 4
+                            "Position": 4,
+                            "Part": 1
                         },
                         {
                             "Description": "max temperature sense BMS address",
                             "Unit": "identity_bms",
                             "Value": "int",
-                            "Position": 5
+                            "Position": 5,
+                            "Part": 1
                         },
                         {
                             "Description": "max temperature sense number",
                             "Unit": "identity_cell",
                             "Value": "int",
-                            "Position": 6
+                            "Position": 6,
+                            "Part": 1
                         },
                         {
                             "Description": "Ah MSB",
                             "Unit": "AmpHour",
                             "Value": "int",
-                            "Position": 7
+                            "Position": 7,
+                            "Part": 1
                         },
                         {
                             "Description": "Ah LSB",
                             "Unit": "AmpHour",
                             "Value": "int",
-                            "Position": 8
+                            "Position": 8,
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "CELL",
@@ -165,19 +182,21 @@
                             "Description": "number of BMS units",
                             "Unit": "count",
                             "Value": "int",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "cell voltage",
                             "Unit": "voltage",
                             "Value": "float",
-                            "Position": "template"
+                            "Position": "template",
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "PTEM",
@@ -194,19 +213,21 @@
                             "Description": "number of BMS units",
                             "Unit": "count",
                             "Value": "int",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "cell temperature",
                             "Unit": "celcius",
                             "Value": "float",
-                            "Position": "template"
+                            "Position": "template",
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "RINT",
@@ -223,19 +244,21 @@
                             "Description": "number of BMS units",
                             "Unit": "count",
                             "Value": "int",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "cell resistance",
                             "Unit": "ohms",
                             "Value": "float",
-                            "Position": "template"
+                            "Position": "template",
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "BTEM",
@@ -252,19 +275,21 @@
                             "Description": "number of BMS units",
                             "Unit": "count",
                             "Value": "int",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "BMS temperature",
                             "Unit": "celcius",
                             "Value": "float",
-                            "Position": "template"
+                            "Position": "template",
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "ERRO",
@@ -281,37 +306,42 @@
                             "Description": "data bytes to be sent",
                             "Unit": "count",
                             "Value": "byte",
-                            "Position": 0
+                            "Position": 0,
+                            "Part": 0
                         },
                         {
                             "Description": "0 – no error, 1 – error",
                             "Unit": "boolean",
                             "Value": "binary",
-                            "Position": 1
+                            "Position": 1,
+                            "Part": 1
                         },
                         {
                             "Description": "BMS unit",
                             "Unit": "identity_bms",
                             "Value": "int",
-                            "Position": 2
+                            "Position": 2,
+                            "Part": 1
                         },
                         {
                             "Description": "error number (1-16)",
                             "Unit": "identity",
                             "Value": "int",
-                            "Position": 3
+                            "Position": 3,
+                            "Part": 1
                         },
                         {
                             "Description": "number of the cell, temperature sensor where the error occured",
                             "Unit": "identity",
                             "Value": "int",
-                            "Position": 4
+                            "Position": 4,
+                            "Part": 1
                         }
                     ]
                 }
             },
             "Category": "Information",
-            "HandlerType": "Array"
+            "Handler": "Array"
         },
         {
             "Instruction": "BVOL",
@@ -328,7 +358,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "BMIN",
@@ -345,7 +375,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CMAX",
@@ -362,7 +392,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "MAXH",
@@ -379,7 +409,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CMIN",
@@ -396,7 +426,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "MINH",
@@ -413,7 +443,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CHAR",
@@ -430,7 +460,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CHIS",
@@ -447,7 +477,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "RAZL",
@@ -464,7 +494,7 @@
                 "Value": "float"
             },
             "Category": "Cell",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "TMAX",
@@ -481,7 +511,7 @@
                 "Value": "signed_float"
             },
             "Category": "Temperature",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "TMIN",
@@ -498,7 +528,7 @@
                 "Value": "signed_float"
             },
             "Category": "Temperature",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "TBAL",
@@ -515,7 +545,7 @@
                 "Value": "signed_float"
             },
             "Category": "Temperature",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "BMTH",
@@ -532,7 +562,7 @@
                 "Value": "signed_float"
             },
             "Category": "Temperature",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "IOFF",
@@ -549,7 +579,7 @@
                 "Value": "signed_float"
             },
             "Category": "Amperage",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "IOJA",
@@ -566,7 +596,7 @@
                 "Value": "float"
             },
             "Category": "Amperage",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CYCL",
@@ -583,7 +613,7 @@
                 "Value": "integer"
             },
             "Category": "Pack",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CAPA",
@@ -600,7 +630,7 @@
                 "Value": "float"
             },
             "Category": "Pack",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CHEM",
@@ -617,7 +647,7 @@
                 "Value": "unsigned_char"
             },
             "Category": "Pack",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "SOCH",
@@ -634,7 +664,7 @@
                 "Value": "float"
             },
             "Category": "SOC",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "SOCS",
@@ -651,7 +681,7 @@
                 "Value": "float"
             },
             "Category": "SOC",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CHAC",
@@ -668,7 +698,7 @@
                 "Value": "float"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "DCHC",
@@ -685,7 +715,7 @@
                 "Value": "float"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "SISN",
@@ -702,7 +732,7 @@
                 "Value": "unsigned_char"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "MAXC",
@@ -719,7 +749,7 @@
                 "Value": "float"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "MAXD",
@@ -736,7 +766,7 @@
                 "Value": "float"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CLOW",
@@ -753,7 +783,7 @@
                 "Value": "float"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "CANF",
@@ -770,7 +800,7 @@
                 "Value": "unsigned_char"
             },
             "Category": "Victron",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "VMAX",
@@ -787,7 +817,7 @@
                 "Value": "integer"
             },
             "Category": "Error",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "VMIN",
@@ -804,7 +834,7 @@
                 "Value": "integer"
             },
             "Category": "Error",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "SWVR",
@@ -818,7 +848,7 @@
                 "Value": "string"
             },
             "Category": "BMS",
-            "HandlerType": "String"
+            "Handler": "String"
         },
         {
             "Instruction": "HWVR",
@@ -832,7 +862,7 @@
                 "Value": "string"
             },
             "Category": "BMS",
-            "HandlerType": "String"
+            "Handler": "String"
         },
         {
             "Instruction": "EAVC",
@@ -849,7 +879,7 @@
                 "Value": "signed_float"
             },
             "Category": "BMS",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "ODDC",
@@ -866,7 +896,7 @@
                 "Value": "signed_float"
             },
             "Category": "BMS",
-            "HandlerType": "Range"
+            "Handler": "Range"
         },
         {
             "Instruction": "REFC",
@@ -883,7 +913,7 @@
                 "Value": "signed_float"
             },
             "Category": "BMS",
-            "HandlerType": "Range"
+            "Handler": "Range"
         }
     ]
 }
