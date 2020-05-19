@@ -394,7 +394,7 @@ Param($value)
 
 Function Invoke-BMSCommunication {
 [cmdletbinding()]
-Param($InstructionObject)
+Param($iO)
     begin {
         #trap all errors.
         trap {
@@ -402,17 +402,18 @@ Param($InstructionObject)
         $port.Close()
         break
         }
+
     }
-    
+
     process {
         #Define a watch dog object to use in serial communication timeouts.
         $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
         #convert the hex string to a byte array.
-        $bytes = Convert-HexToByteArray ($InstructionObject.HexData -join "")
+        $bytes = Convert-HexToByteArray ($iO.HexData -join "")
         #load configuration metadata for comm session
         $config = Get-BMSConfigMeta
         #define array for return data stream
-        $Stream = New-Object System.Collections.Generic.List[System.Object]
+        
         #enumerate the configurable list from the metadata
         #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
         $SerialConfigurables = $config.client.psobject.properties.name
@@ -432,10 +433,11 @@ Param($InstructionObject)
         
         #start the timer for transmit event.
         $WatchDog.Start()
-        try {
-            #open the port
-            $port.Open() 
+        #open the port this session
+        $port.Open()
 
+        try {
+           
             #clear existing buffer, just in case something is sending on the line
             #this could probably be built more robust, but for now it's at least an acknowledgement that the line should be clear.
             $port.ReadExisting() | Out-Null
@@ -448,9 +450,10 @@ Param($InstructionObject)
         catch {
             #catch the rest of the errors related to opening serial ports.
             $Error[0]
+            $port.Close()
             break
         }
-
+        #port stays open
         #stop the timer for transmit event.
         $WatchDog.Stop()
         Write-Verbose ("Serial TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
@@ -470,7 +473,25 @@ Param($InstructionObject)
         #one response on the wire expected at a time. This connection is not chatty at all.
         
         #start the timer for the receieve event.
+        $Stream = New-Object System.Collections.Generic.List[System.Object]
+        $MultiPart = New-Object PSCustomObject
+
         $WatchDog.Start()
+        #byte index
+        $b = 0
+        #start transmission array index
+        $STXIndex = 0
+        #length array index
+        $LENIndex = 0
+        #length value
+        $LEN = 0
+        #message part ID - only up to two parts (0 or 1)
+        $ID = 0
+
+        if ($iO.Instruction.Handler -match "Array")
+        {
+            Write-Verbose "Expecting a multipart response"
+        }
         do {
             #null this iteration of data collection in loop
             $Data = $null
@@ -478,22 +499,56 @@ Param($InstructionObject)
                 #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
                 #with the serial port setup.
                 $Data = "{0:x2}" -f $port.ReadByte()
-                
                 #if there's data returned, add to return stream.
                 if ($Data)
                 {
                     #add byte to the array.
+                    Write-Verbose ("[$b]:" + $Data.ToString())
                     $Stream.Add($Data)
+                    if (($b -eq $LENIndex) -and ($b -ne 0))
+                    {
+                        $LEN = [convert]::ToByte($Stream[$b],16)
+                        Write-Verbose ("Detected: <LEN>=$LEN")
+                    }
+                    if ($Data -match "55")
+                    {
+                        $STXIndex = $b
+                        $LENIndex = $STXIndex + 3
+                        Write-Verbose ("Detected: <STX>[$STXIndex]")
+                    }
+                    if ($Data -match "aa")
+                    {
+                        Write-Verbose ("Detected: <ETX>[$b]")
+                    }
+                    $b++
+                    <#
+                    $Part.Add($HexString[$b])
+                    if ($HexString[$b] -match "aa")
+                    {
+                        if (($HexString[$b + 1]) -eq "55")
+                        {
+                            $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
+                            $ID++
+                            $Part = New-Object System.Collections.Generic.List[System.Object]
+                            Write-Verbose "New Message Continues"
+                        }
+                        else
+                        {
+                            $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
+                            Write-Verbose "No New Messages"
+                        }
+                    
+                    #>
                 }
             }
             catch [System.TimeoutException]{
                 #this is how the do loop ends right now. we can do better. see the zzz todo about intelligent stream parsing.
-                
+        
                 #clean up the port and report our findings.
                 Write-Verbose "Caught end of buffer exception"
                 $port.Close()
-                $WatchDog.Stop()
                 Write-Verbose ("Closed Port " + $port.PortName)
+                $WatchDog.Stop()
                 Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
                 Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
                 $WatchDog.Reset()
@@ -507,8 +562,8 @@ Param($InstructionObject)
         #clean up the port and report our findings.
         Write-Warning ("Serial timeout occured. Hard stop at " + $config.Session.SessionTimeout + " milliseconds")
         $port.Close()
-        $WatchDog.Stop()
         Write-Verbose ("Closed Port " + $port.PortName)
+        $WatchDog.Stop()
         Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
         Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
         $WatchDog.Reset()
@@ -669,14 +724,14 @@ Function Split-CompoundMessageStream
     param($HexString)
     $MultiPart = New-Object PSCustomObject
     $ID = 0
-    $i = 0
+    $b = 0
     $Part = New-Object System.Collections.Generic.List[System.Object]
     foreach ($byte in $HexString)
     {
-        $Part.Add($HexString[$i])
-        if ($HexString[$i] -match "aa")
+        $Part.Add($HexString[$b])
+        if ($HexString[$b] -match "aa")
         {
-            if (($HexString[$i + 1]) -eq "55")
+            if (($HexString[$b + 1]) -eq "55")
             {
                 $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
                 $ID++
@@ -689,7 +744,7 @@ Function Split-CompoundMessageStream
                 Write-Verbose "No New Messages"
             }
         }
-        $i++
+        $b++
     }
     return $MultiPart
 }
