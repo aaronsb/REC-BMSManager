@@ -15,7 +15,7 @@ Class Message {
 
 #REQUIRES -Version 3.0
 Function Get-CRC16($hexdata) {
-
+    [CmdletBinding()]
     $bytes = Convert-HexToByteArray ($hexdata -join "")
     $CRCTable = 0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
 
@@ -101,7 +101,7 @@ Function Get-CRC16($hexdata) {
     
         }
     
-    "{0:x}" -f ($tempCRC)
+    "{0:x4}" -f ($tempCRC)
     
 }
 
@@ -126,9 +126,7 @@ Function Convert-ByteArrayToHex {
 }
 
 Function Convert-HexToByteArray {
-
     [cmdletbinding()]
-
     param(
         [parameter(Mandatory=$true)]
         [String]
@@ -145,8 +143,61 @@ Function Convert-HexToByteArray {
 }
 
 Function Get-BMSInstructionList {
-    $object = gc .\instructionset.json | ConvertFrom-Json
-    $object.command | Select-Object -Property Instruction,Name,Category
+    [CmdletBinding()]
+    Param(  [ValidateSet("String","Array","Range")][String]$Handler)
+    DynamicParam {
+ 
+        # Set the dynamic parameters' name
+        $ParameterName = 'Category'
+
+        # Create the dictionary
+        $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+
+        # Create the collection of attributes
+        $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+
+        # Create and set the parameters' attributes
+        $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
+        $ParameterAttribute.Mandatory = $false
+        $ParameterAttribute.Position = 1
+
+        # Add the attributes to the attributes collection
+        $AttributeCollection.Add($ParameterAttribute)
+
+        # Generate and set the ValidateSet
+        # get just instruction names from the library
+        $arrSet = (gc .\instructionset.json | ConvertFrom-Json).Command.Category | Sort-Object -Unique
+        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
+
+        # Add the ValidateSet to the attributes collection
+        $AttributeCollection.Add($ValidateSetAttribute)
+
+        # Create and return the dynamic parameter
+        $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
+        $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
+        return $RuntimeParameterDictionary
+    }
+
+    begin {
+                #give dynamic parameter a friendly parameter name
+                $Category = $PSBoundParameters[$ParameterName]
+    }
+
+    process {
+        $object = gc .\instructionset.json | ConvertFrom-Json
+        $object = $object.command | Select-Object -Property Instruction,Name,Category,Handler
+        if ($Category)
+        {
+            Write-Verbose ("Selected " + $Category + " category type") 
+            $object = $object | ?{$_.Category -match $Category}
+        }
+        if ($Handler)
+        {
+            Write-Verbose ("Selected " + $Handler + " type handler")
+            $object = $object | ?{$_.Handler -match $Handler}
+        }
+        return $object
+    }
 }
 
 
@@ -260,78 +311,83 @@ Param($value)
         #load configuration metadata for use
         $config = Get-BMSConfigMeta
     
-    if (!$instruction)
-    {
-        #if no instruction given, just barf out all of them. What could go wrong?
-        Get-BMSInstructionList
-        return
-    }
-    else {
-        #got an instruction name, try getting it
-        try {
-            $iO = Get-BMSInstruction $instruction
+        if (!$instruction)
+        {
+            #if no instruction given, just barf out all of them. What could go wrong?
+            Get-BMSInstructionList
+            return
         }
-        catch {
-            Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors.")
+        else {
+            #got an instruction name, try getting it
+            try {
+                $iO = Get-BMSInstruction $instruction
+            }
+            catch {
+                Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors.")
+            }
         }
-    }
-   
-   
-    
-    #region enumerate instructions
-    #assemble header
-    #message is the entire message to be sent, including Start, End, checksums, etc.
-    #instruction is just the instrction portion of the message.
-    
-    #instance two arrays, one for message, and one for the instruction only.
-    $hexdata = New-Object System.Collections.Generic.List[System.Object]
-    $instruction = New-Object System.Collections.Generic.List[System.Object]
+        Write-Verbose "Using Instruction:"
+        Write-Verbose ($iO | ft | out-string)
+        #region enumerate instructions
+        #assemble header
+        #message is the entire message to be sent, including Start, End, checksums, etc.
+        #instruction is just the instrction portion of the message.
+        
+        #instance two arrays, one for message, and one for the instruction only.
+        $hexdata = New-Object System.Collections.Generic.List[System.Object]
+        $instruction = New-Object System.Collections.Generic.List[System.Object]
 
-    #assemble the header, add to message.
-    $hexdata.Add($config.Message.Components.STX.ToLower())
-    $hexdata.Add($config.Message.Components.DST.ToLower())
-    $hexdata.Add($config.Message.Components.SND.ToLower())
-    
-    #assemble the instruction subarray
-    $iO.Instruction.ToCharArray() | %{"{0:x}" -f [int16]$_} | %{$instruction.Add($_)}
-    
-    if ($value) {
-        #zzz TODO: construct a "WRITE" message. For now, let's just concentrate on read only messages ;)
-        #parse instruction set to package value being set here
-        $query = $false
-        Write-Warning "Not Implemented. (yet!)"
-        break
-    }
-    else
-    {
-        #no $value defined, so this will be a read only query.
-        #add configured query value to subarray. It's default is am ASCII ? (0x3F)
-        $instruction.Add($config.message.components.QRY.ToLower())
-        $query = $true
-    }
+        #assemble the header, add to message.
+        
+        $hexdata.Add($config.Message.Components.STX.ToLower())
+        $hexdata.Add($config.Message.Components.DST.ToLower())
+        $hexdata.Add($config.Message.Components.SND.ToLower())
+        Write-Verbose ("Header (STX)(DST)(SND) assembled: " + $hexdata )
 
-    #count length of instruction bytes in payload, add to message.
-    $hexdata.Add("{0:x2}" -f [int16]$instruction.count)
-    $instruction | %{$hexdata.Add($_)}
+        #assemble the instruction subarray
+        $iO.Instruction.ToCharArray() | %{"{0:x}" -f [int16]$_} | %{$instruction.Add($_)}
+        
+        if ($value) {
+            #zzz TODO: construct a "WRITE" message. For now, let's just concentrate on read only messages ;)
+            #parse instruction set to package value being set here
+            $Query = $false
+            Write-Warning "Not Implemented. (yet!)"
+            break
+        }
+        else
+        {
+            #no $value defined, so this will be a read only query.
+            #add configured query value to subarray. It's default is am ASCII ? (0x3F)
+            $instruction.Add($config.message.components.QRY.ToLower())
+            $query = $true
+            Write-Verbose ("Instruction is Query (?): " + $config.message.components.QRY.ToLower())
+        }
 
-    #compute/add CRC
-    #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
-    $crc = (Get-CRC16 ($hexdata[1..($hexdata.count)] -Join "")) -replace '..', "$& " -split " "
-    
-    #add First byte of CRC
-    $hexdata.Add($crc[0])
-    
-    #add second byte of CRC
-    $hexdata.Add($crc[1])
-    
-    #add end transmission
-    $hexdata.Add($config.Message.Components.ETX.ToLower())  
-    
-    $messageDetail = ((Convert-HexToByteArray -HexString ($hexdata -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        #count length of instruction bytes in payload, add to message.
+        $hexdata.Add("{0:x2}" -f [int16]$instruction.count)
+        Write-Verbose ("Instruction bytecount added: " + ("{0:x2}" -f [int16]$instruction.count))
+        $instruction | %{$hexdata.Add($_)}
+        Write-Verbose ("Instruction Assembled: " + $instruction)
 
-    #return the message as a hash array
-    #next better version of this should be to define a custom class for this.
-    return @{"Instruction"=$io;"Hexdata"=$hexdata;"MessageDetail"=$messageDetail}
+        #compute/add CRC
+        #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
+        $crc = (Get-CRC16 ($hexdata[1..($hexdata.count)] -Join "")) -replace '..', "$& " -split " "
+        Write-Verbose ("CRC caclulated: " + $crc)
+        #add First byte of CRC
+        $hexdata.Add($crc[0])
+        
+        #add second byte of CRC
+        $hexdata.Add($crc[1])
+        
+        #add end transmission
+        $hexdata.Add($config.Message.Components.ETX.ToLower())  
+        Write-Verbose ("Footer assembled (ETX): " + $config.Message.Components.ETX.ToLower())
+
+        $messageDetail = ((Convert-HexToByteArray -HexString ($hexdata -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        Write-Verbose "Assembly complete"
+        #return the message as a hash array
+        #next better version of this should be to define a custom class for this.
+        return @{"Instruction"=$io;"Hexdata"=$hexdata;"MessageDetail"=$messageDetail}
     }
 }
 
@@ -561,10 +617,11 @@ Function Get-BMSParameter {
         $MessageObject = New-BMSMessage -Instruction $Instruction
         $BMSReturnedPayload = Invoke-BMSCommunication -InstructionObject $MessageObject
         
-        switch ($MessageObject.Instruction.HandlerType)
+        Write-Verbose ("Selected " + $MessageObject.Instruction.Handler + " type handler")
+        switch ($MessageObject.Instruction.Handler)
         {
             String {
-                Write-Verbose "String Type Handler"
+                
                 if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
                 {
                     Throw "CRC FAILED"
