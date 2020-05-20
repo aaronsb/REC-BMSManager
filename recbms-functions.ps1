@@ -144,7 +144,7 @@ Function Convert-HexToByteArray {
 
 Function Get-BMSInstructionList {
     [CmdletBinding()]
-    Param(  [ValidateSet("String","Array","Range")][String]$Handler)
+    Param([ValidateSet("String","Array","Range")][String]$Handler,[Switch]$Common)
     DynamicParam {
  
         # Set the dynamic parameters' name
@@ -185,19 +185,26 @@ Function Get-BMSInstructionList {
 
     process {
         $object = gc .\instructionset.json | ConvertFrom-Json
-        $object = $object.command | Select-Object -Property Instruction,Name,Category,Handler
-        if ($Category)
-        {
-            Write-Verbose ("Selected " + $Category + " category type") 
-            $object = $object | ?{$_.Category -match $Category}
+        $selection = $object.Command | Select-Object -Property Instruction,Name,Category,Handler
+        if ($Common) {
+            Write-Verbose ("Selected common instructions") 
+                Write-Verbose "Can't use Category or Handler filters with Common switch."
+                $selection = $object.Command | ?{$_.Common -eq $true} | Select-Object -Property Instruction,Name,Category,Handler
         }
-        if ($Handler)
-        {
-            Write-Verbose ("Selected " + $Handler + " type handler")
-            $object = $object | ?{$_.Handler -match $Handler}
+        else {
+            if ($Category) {
+                Write-Verbose ("Selected " + $Category + " category type") 
+                $selection = $object.Command | ?{$_.Category -match $Category} | Select-Object -Property Instruction,Name,Category,Handler
+            }
+            if ($Handler)
+            {
+                Write-Verbose ("Selected " + $Handler + " type handler")
+                $selection = $object.Command | ?{$_.Handler -match $Handler} | Select-Object -Property Instruction,Name,Category,Handler
+            }
         }
-        return $object
+    return $selection
     }
+    
 }
 
 
@@ -387,7 +394,7 @@ Param($value)
         Write-Verbose "Assembly complete"
         #return the message as a hash array
         #next better version of this should be to define a custom class for this.
-        return @{"Instruction"=$io;"Hexdata"=$hexdata;"MessageDetail"=$messageDetail}
+        return [PSCustomObject]@{"Instruction"=$io;"Hexdata"=$hexdata;"MessageDetail"=$messageDetail}
     }
 }
 
@@ -463,100 +470,132 @@ Param($iO)
         #Wait a specified number of milliseconds. 250ms is the default configured in metadata.
         Start-Sleep -m $config.Session.SessionThrottle
         
-        #zzz todo
-        #modify this stream parser so it's smarter
-        #instead of exception at end of buffer,
-        #try reading the stream and reading ahead only the bytes indicated in the stream 
-        #ah, maybe eventually.
-
-        #do loop for collecting data bytes off the wire. There is an inherent expectation/assumption that there is only
-        #one response on the wire expected at a time. This connection is not chatty at all.
+        #create a new pscustomobject array to store multiparts of stream
+        $MultiPartObject = New-Object PSCustomObject
         
-        #start the timer for the receieve event.
-        $Stream = New-Object System.Collections.Generic.List[System.Object]
-        $MultiPart = New-Object PSCustomObject
+        #initalize byte index
+        $i = 0
+        
+        #estimated number of bytes for Stream
+        $StreamLengthEstimate = 0
+       
+        #initalize start transmission (sub)index
+        $thisSTX = 0
 
-        $WatchDog.Start()
-        #byte index
-        $b = 0
-        #start transmission array index
-        $STXIndex = 0
-        #length array index
-        $LENIndex = 0
-        #length value
-        $LEN = 0
-        #message part ID - only up to two parts (0 or 1)
-        $ID = 0
+        #initalize end transmission (sub)index
+        $thisETX = 0
+        
+        #initalize length (sub)index
+        $thisLEN = 0
+        
+        #initalize (sub)length value 
+        $StreamPartLength = 0
+        
+        #initalize total number of message parts expected as defined in library
+        switch ($iO.Instruction.Handler) {
+            Range  {$partCount = 1}
+            String {$partCount = 1}
+            Array  {$partCount = [int]$iO.Instruction.Return.Value.Array.Part.Count}
+            Default {$partCount = $null}
+        }
+        
+        #initalize message part index
+        $IndexMessagePart = 1
+        
+        #initialize empty array to store all bytes
+        $Stream = New-Object System.Collections.Generic.List[System.Object]
 
         if ($iO.Instruction.Handler -match "Array")
         {
-            Write-Verbose "Expecting a multipart response"
+            Write-Verbose ("Expecting $partCount parts in bytestream")
         }
+
+        #start the timer for the receieve event.
+        $WatchDog.Start()
+        
         do {
-            #null this iteration of data collection in loop
+            #null this iteration of data collection in loop (to stay sanitary)
             $Data = $null
             try {
+                #if the count of bytes collected in stream is greater than the estimated stream length
+                #and
+                #the index of message parts is greater than the parts count defined from the dictonary for this particular instruction
+                #(because some instructions are multi part messages, and we get multiple ETX bytes in a single Received transsmission session)
+                #then
+                #bail from loop before the next ReadByte() so we don't incur a buffer exception.
+
+
+                if ($IndexMessagePart -gt $partCount)
+                {
+                    $port.Close()
+                    $WatchDog.Stop()
+                    Write-Verbose ("Closed Port " + $port.PortName)
+                    Write-Verbose ("Received " + $Stream.count + " bytes on " + $port.PortName)
+                    Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+                    $WatchDog.Reset()
+                    Write-Verbose "Returning stream"
+                    
+                    #return the message as a hash array
+                    #next better version of this should be to define a custom class for this.
+                    $messageDetail = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+                    return [PSCustomObject]@{"OriginInstruction"=$io;"RawStream"=$Stream;"InspectedStream"=$messageDetail;"ParsedStream"=(Sort-MessageStream $Stream)}
+                }
+
                 #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
                 #with the serial port setup.
                 $Data = "{0:x2}" -f $port.ReadByte()
-                #if there's data returned, add to return stream.
-                if ($Data)
+                #add retrieved byte to stream array
+                $Stream.Add($Data)
+
+                #IF Case matches byte <STX>
+                if (($Data) -match "55")
                 {
-                    #add byte to the array.
-                    Write-Verbose ("[$b]:" + $Data.ToString())
-                    $Stream.Add($Data)
-                    if (($b -eq $LENIndex) -and ($b -ne 0))
-                    {
-                        $LEN = [convert]::ToByte($Stream[$b],16)
-                        Write-Verbose ("Detected: <LEN>=$LEN")
-                    }
-                    if ($Data -match "55")
-                    {
-                        $STXIndex = $b
-                        $LENIndex = $STXIndex + 3
-                        Write-Verbose ("Detected: <STX>[$STXIndex]")
-                    }
-                    if ($Data -match "aa")
-                    {
-                        Write-Verbose ("Detected: <ETX>[$b]")
-                    }
-                    $b++
-                    <#
-                    $Part.Add($HexString[$b])
-                    if ($HexString[$b] -match "aa")
-                    {
-                        if (($HexString[$b + 1]) -eq "55")
-                        {
-                            $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
-                            $ID++
-                            $Part = New-Object System.Collections.Generic.List[System.Object]
-                            Write-Verbose "New Message Continues"
-                        }
-                        else
-                        {
-                            $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
-                            Write-Verbose "No New Messages"
-                        }
-                    
-                    #>
+                    #Save this index of STX from the stream index (which will keep incrementing)
+                    $thisSTX = $i
+                    #add 3 bytes of offset to get the index of length. We may not have Received this byte yet, this is a future lookup.
+                    $thisLEN = $thisSTX + 3
+                    Write-Verbose ("---------- <Detected: <STX>[$thisSTX]>---------- Begin Part " + $IndexMessagePart + " ---------- <")
+                    #Write-Verbose ("Length value is probably: " + )
                 }
+
+                Write-Verbose ("[$i]:" + ($Data))
+
+                #IF Case matches byte <ETX>
+                if (($Data) -match "aa")
+                {
+                    #increment the completed message part counter
+                    $thisETX = $i
+                    Write-Verbose ("---------- <Detected: <ETX>[$thisETX]>---------- End Part " + $IndexMessagePart + " ---------- <")
+    
+                    #add the bytes stored in $MultiPartObject to our little PSCustomObject briefcase
+                    #$MultiPartObject | Add-Member -Name $IndexMessagePart -Type NoteProperty -Value ($Stream[$thisSTX..$thisETX])
+
+                    #inncrement the message part count index, since we found <ETX> in the stream
+                    $IndexMessagePart++
+                }
+                
+                
+                $i++
+                
             }
             catch [System.TimeoutException]{
-                #this is how the do loop ends right now. we can do better. see the zzz todo about intelligent stream parsing.
-        
-                #clean up the port and report our findings.
-                Write-Verbose "Caught end of buffer exception"
+                #clean up the port and report error. :(
+                Write-Error "End of buffer exception!"
                 $port.Close()
                 Write-Verbose ("Closed Port " + $port.PortName)
                 $WatchDog.Stop()
-                Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
+                Write-Verbose ("Received " + $Stream.count + " bytes on " + $port.PortName)
                 Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
                 $WatchDog.Reset()
                 Write-Verbose "Returning stream"
-                return $Stream
+                #return the message as a hash array
+                #next better version of this should be to define a custom class for this.
+                $messageDetail = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+                return [PSCustomObject]@{"OriginInstruction"=$io;"RawStream"=$Stream;"InspectedStream"=$messageDetail;"ParsedStream"=(Sort-MessageStream $Stream)}
+                #this error is a failure and can cause dependent calls to fall on their face
+                #if (unlikely) any good data comes out, crc check will provide some validation
             }
         } until ($WatchDog.ElapsedMilliseconds -ge $config.Session.SessionTimeout)
-        #} until ($Data -eq $null)
 
         #this exit condition is one where watchdog caught the hard timeout.
         #clean up the port and report our findings.
@@ -564,11 +603,16 @@ Param($iO)
         $port.Close()
         Write-Verbose ("Closed Port " + $port.PortName)
         $WatchDog.Stop()
-        Write-Verbose ("Recieved " + $Stream.count + " bytes on " + $port.PortName)
+        Write-Verbose ("Received " + $Stream.count + " bytes on " + $port.PortName)
         Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
         $WatchDog.Reset()
         Write-Verbose "Returning stream"
-        return $Stream
+        #return the message as a hash array
+        #next better version of this should be to define a custom class for this.
+        $messageDetail = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        return [PSCustomObject]@{"OriginInstruction"=$io;"RawStream"=$Stream;"InspectedStream"=$messageDetail;"ParsedStream"=(Sort-MessageStream $Stream)}
+        #this error is a failure and can cause dependent calls to fall on their face
+        #if (unlikely) any good data comes out, crc check will provide some validation
     }
     
 }
@@ -619,17 +663,11 @@ Function New-BMSConversation
 }
 
 
-<#
-Some placeholder stuff for testing.
-#$inst = ("LCD1","LCD3","CELL","PTEM","RINT","BTEM","ERRO")
-#$inst | %{New-BMSConversation $_}
-#$inst | %{New-BMSMessage -Instruction $_} | %{Invoke-BMSCommunication $_}
-#Invoke-BMSCommunication (New-BMSMessage -Instruction _IDN)
-#>
+
 
 Function Get-BMSParameter {
     [CmdletBinding()]
-    Param()
+    Param([switch]$NoFormatList,[switch]$ExtraInfo)
     DynamicParam {
  
         # Set the dynamic parameters' name
@@ -669,37 +707,60 @@ Function Get-BMSParameter {
     }
 
     process {
-        $MessageObject = New-BMSMessage -Instruction $Instruction
-        $BMSReturnedPayload = Invoke-BMSCommunication -InstructionObject $MessageObject
+        $iO = New-BMSMessage -Instruction $Instruction
+        $BMSO = Invoke-BMSCommunication -iO $iO
         
-        Write-Verbose ("Selected " + $MessageObject.Instruction.Handler + " type handler")
-        switch ($MessageObject.Instruction.Handler)
+        Write-Verbose ("Selected " + $iO.Instruction.Handler + " type handler")
+        switch ($iO.Instruction.Handler)
         {
             String {
                 
-                if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
+                if ((Verify-MessageCRC $BMSO.ParsedStream.0) -eq $false)
                 {
                     Throw "CRC FAILED"
                 }
-                New-BMSParameterFromByteStream $BMSReturnedPayload
+                $BMSO | Add-Member -MemberType NoteProperty -Name BMSValue -Value (Get-BMSCharFromHexStream $BMSO.ParsedStream.0)
+                $DisplayTemplate = $BMSO.OriginInstruction.Instruction.Return
+                $DisplayTemplate.value = $BMSO.BMSValue
             }
             Array  {
                 Write-Verbose "Array Type Handler"
-                if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
-                {
-                    Throw "CRC FAILED"
+                foreach ($Stream in $BMSO.ParsedStream) {
+                    if ((Verify-MessageCRC $Stream) -eq $false) {
+                        Throw "CRC FAILED"
+                    }
                 }
+                Write-Warning "I don't know how to handle array type messages (quite) yet."
             }
             Range  {
                 Write-Verbose "Range Type Handler"
-                if ((Verify-MessageCRC $BMSReturnedPayload) -eq $false)
+                if ((Verify-MessageCRC $BMSO.ParsedStream.0) -eq $false)
                 {
                     Throw "CRC FAILED"
                 }
-                New-BMSParameterFromByteStream $BMSReturnedPayload
+                $BMSO | Add-Member -MemberType NoteProperty -Name BMSValue -Value (Get-BMSCharFromHexStream $BMSO.ParsedStream.0)
+                $DisplayTemplate = $BMSO.OriginInstruction.Instruction.Return
+                $DisplayTemplate.value = $BMSO.BMSValue
             }
-            Default  {}
+            Default  {
+                Write-Warning ("No handler for type [" + $iO.Instruction.Handler + "]")
+                break
+            }
         }
+        if ($ExtraInfo) {
+            $BMSO
+            $DisplayTemplate
+        }
+        else {
+            if ($NoFormatList) {
+                $DisplayTemplate
+            }
+            else {
+                $DisplayTemplate | Format-List
+            }
+            
+        }
+        
     }
     
 }
@@ -707,7 +768,7 @@ Function Get-BMSParameter {
 
 
 
-Function New-BMSParameterFromByteStream{
+Function Get-BMSCharFromHexStream{
     [CmdletBinding()]
     param($HexString)
 
@@ -718,7 +779,7 @@ Function New-BMSParameterFromByteStream{
 }
 
 
-Function Split-CompoundMessageStream
+Function Sort-MessageStream
 {
     [CmdletBinding()]
     param($HexString)
@@ -751,12 +812,12 @@ Function Split-CompoundMessageStream
 
 Function Verify-MessageCRC {
     [CmdletBinding()]
-    param($HexString)
-    $ComputablePayloadLength = ([convert]::toint16($HexString[3],16) + 3)
-    $CRCTask = ($HexString[1..$ComputablePayloadLength]) -join ""
-    $OldCRC = ($HexString[($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
+    param($HexArray)
+    $ComputablePayloadLength = ([convert]::toint16($HexArray[3],16) + 3)
+    $CRCTask = ($HexArray[1..$ComputablePayloadLength]) -join ""
+    $OldCRC = ($HexArray[($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
     $NewCRC = (Get-CRC16 $CRCTask) -join ""
-    Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Recieved CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
+    Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Received CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
     if ($NewCRC -notmatch $OldCRC)
     {
         $false
@@ -767,4 +828,12 @@ Function Verify-MessageCRC {
     }
     #compute/add CRC
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
+}
+
+Function Get-BMSStatus
+{param()
+    foreach ($instruction in ((Get-BMSInstructionList -Common).Instruction))
+    {
+        Get-BMSParameter $instruction -NoFormatList
+    }
 }
