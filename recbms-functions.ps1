@@ -175,7 +175,7 @@ Function Get-BMSConfigMeta {
     gc .\config.json | ConvertFrom-Json
 }
 
-Function Get-BMSInstruction {
+Function New-BMSInstruction {
     [CmdletBinding()]
     Param($Instruction)
 
@@ -253,7 +253,7 @@ Param($value)
         else {
             #got an instruction name, try getting it
             try {
-                $iO = Get-BMSInstruction $instruction
+                $iO = New-BMSInstruction $instruction
             }
             catch {
                 Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors.")
