@@ -390,11 +390,12 @@ Param($value)
         $hexdata.Add($config.Message.Components.ETX.ToLower())  
         Write-Verbose ("Footer assembled (ETX): " + $config.Message.Components.ETX.ToLower())
 
-        $messageDetail = ((Convert-HexToByteArray -HexString ($hexdata -join "") | %{[char][int16]$_}) -join "") | Format-Hex
         Write-Verbose "Assembly complete"
         #return the message as a hash array
         #next better version of this should be to define a custom class for this.
-        return [PSCustomObject]@{"Instruction"=$io;"Hexdata"=$hexdata;"MessageDetail"=$messageDetail}
+        $HexDataInspection = ((Convert-HexToByteArray -HexString ($hexdata -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        $iO | Add-Member -Name "HexDataSend" -Type NoteProperty -Value (@{"RawStream"=$hexdata;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $hexdata)})
+        return $iO
     }
 }
 
@@ -416,7 +417,7 @@ Param($iO)
         #Define a watch dog object to use in serial communication timeouts.
         $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
         #convert the hex string to a byte array.
-        $bytes = Convert-HexToByteArray ($iO.HexData -join "")
+        $SendBytes = Convert-HexToByteArray ($iO.HexDataSend.RawStream -join "")
         #load configuration metadata for comm session
         $config = Get-BMSConfigMeta
         #define array for return data stream
@@ -450,8 +451,8 @@ Param($iO)
             $port.ReadExisting() | Out-Null
             
             #Write the message on the line. Bon Voyage!
-            Write-Verbose ("Sending " + $bytes.count + " bytes on " + $port.PortName)
-            $port.Write([byte[]] $bytes, 0, ($bytes.count))
+            Write-Verbose ("Sending " + $SendBytes.count + " bytes on " + $port.PortName)
+            $port.Write([byte[]] $SendBytes, 0, ($SendBytes.count))
             Write-Verbose "Sucessful TX of instruction"
         }
         catch {
@@ -492,20 +493,29 @@ Param($iO)
         $StreamPartLength = 0
         
         #initalize total number of message parts expected as defined in library
-        switch ($iO.Instruction.Handler) {
-            Range  {$partCount = 1}
-            String {$partCount = 1}
-            Array  {$partCount = [int]$iO.Instruction.Return.Value.Array.Part.Count}
-            Default {$partCount = $null}
+        switch ($iO.Handler) {
+            Range  {
+                $partCount = 1
+            }
+            String {
+                $partCount = 1
+            }
+            Array  {
+                $partCount = ($iO.Return.Value.Array.Part | Sort-Object -unique).Count
+            }
+            Default {
+                $partCount = $null
+            }
         }
-        
+        Write-Verbose ("Serial Session Handler: [" + $iO.Handler  + "] Parts: ["+ $partCount + "]")
+
         #initalize message part index
         $IndexMessagePart = 1
         
         #initialize empty array to store all bytes
         $Stream = New-Object System.Collections.Generic.List[System.Object]
 
-        if ($iO.Instruction.Handler -match "Array")
+        if ($iO.Handler -match "Array")
         {
             Write-Verbose ("Expecting $partCount parts in bytestream")
         }
@@ -527,6 +537,7 @@ Param($iO)
 
                 if ($IndexMessagePart -gt $partCount)
                 {
+                    Write-Verbose ("Reached expected message part count defined for this instruction.")
                     $port.Close()
                     $WatchDog.Stop()
                     Write-Verbose ("Closed Port " + $port.PortName)
@@ -537,8 +548,10 @@ Param($iO)
                     
                     #return the message as a hash array
                     #next better version of this should be to define a custom class for this.
-                    $messageDetail = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-                    return [PSCustomObject]@{"OriginInstruction"=$io;"RawStream"=$Stream;"InspectedStream"=$messageDetail;"ParsedStream"=(Sort-MessageStream $Stream)}
+                    $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+                    $iO | Add-Member -Name "HexDataReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+                    Verify-MessageCRC $iO | out-null
+                    return $iO
                 }
 
                 #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
@@ -558,7 +571,7 @@ Param($iO)
                     #Write-Verbose ("Length value is probably: " + )
                 }
 
-                Write-Verbose ("[$i]:" + ($Data))
+                Write-Verbose ("PartIndex:[$IndexMessagePart] StreamIndex:[$i] ReadByte:[" + $Data + "]")
 
                 #IF Case matches byte <ETX>
                 if (($Data) -match "aa")
@@ -568,13 +581,9 @@ Param($iO)
                     Write-Verbose ("---------- <Detected: <ETX>[$thisETX]>---------- End Part " + $IndexMessagePart + " ---------- <")
     
                     #add the bytes stored in $MultiPartObject to our little PSCustomObject briefcase
-                    #$MultiPartObject | Add-Member -Name $IndexMessagePart -Type NoteProperty -Value ($Stream[$thisSTX..$thisETX])
-
                     #inncrement the message part count index, since we found <ETX> in the stream
                     $IndexMessagePart++
                 }
-                
-                
                 $i++
                 
             }
@@ -590,8 +599,10 @@ Param($iO)
                 Write-Verbose "Returning stream"
                 #return the message as a hash array
                 #next better version of this should be to define a custom class for this.
-                $messageDetail = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-                return [PSCustomObject]@{"OriginInstruction"=$io;"RawStream"=$Stream;"InspectedStream"=$messageDetail;"ParsedStream"=(Sort-MessageStream $Stream)}
+                $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+                $io | Add-Member -Name "HexDataReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+                Verify-MessageCRC $iO | out-null
+                return $iO
                 #this error is a failure and can cause dependent calls to fall on their face
                 #if (unlikely) any good data comes out, crc check will provide some validation
             }
@@ -609,15 +620,17 @@ Param($iO)
         Write-Verbose "Returning stream"
         #return the message as a hash array
         #next better version of this should be to define a custom class for this.
-        $messageDetail = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-        return [PSCustomObject]@{"OriginInstruction"=$io;"RawStream"=$Stream;"InspectedStream"=$messageDetail;"ParsedStream"=(Sort-MessageStream $Stream)}
+        $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        $iO | Add-Member -Name "HexDataReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+        Verify-MessageCRC $iO | out-null
+        return $iO
         #this error is a failure and can cause dependent calls to fall on their face
         #if (unlikely) any good data comes out, crc check will provide some validation
     }
     
 }
 
-Function New-BMSConversation
+Function Invoke-BMSConversation
 {[CmdletBinding()]
     Param()
         DynamicParam {
@@ -658,7 +671,7 @@ Function New-BMSConversation
     
         process {
             #just an invocation wrapper to make it easier, mostly.
-            Invoke-BMSCommunication (New-BMSMessage -Instruction $Instruction)
+            return (Invoke-BMSCommunication (New-BMSMessage -Instruction $Instruction))
         }
 }
 
@@ -707,25 +720,24 @@ Function Get-BMSParameter {
     }
 
     process {
-        $iO = New-BMSMessage -Instruction $Instruction
-        $BMSO = Invoke-BMSCommunication -iO $iO
+        $iO = Invoke-BMSCommunication -iO (New-BMSMessage -Instruction $Instruction)
         
-        Write-Verbose ("Selected " + $iO.Instruction.Handler + " type handler")
-        switch ($iO.Instruction.Handler)
+        Write-Verbose ("Instruction Decoding Handler: [" + $iO.Handler + "]")
+        switch ($iO.Handler)
         {
             String {
                 
-                if ((Verify-MessageCRC $BMSO.ParsedStream.0) -eq $false)
+                if ((Verify-MessageCRC $iO.ParsedStream) -eq $false)
                 {
                     Throw "CRC FAILED"
                 }
-                $BMSO | Add-Member -MemberType NoteProperty -Name BMSValue -Value (Get-BMSCharFromHexStream $BMSO.ParsedStream.0)
-                $DisplayTemplate = $BMSO.OriginInstruction.Instruction.Return
-                $DisplayTemplate.value = $BMSO.BMSValue
+                $iO | Add-Member -MemberType NoteProperty -Name BMSValue -Value (Get-BMSCharFromHexStream $iO.ParsedStream.0)
+                $DisplayTemplate = $iO.OriginInstruction.Instruction.Return
+                $DisplayTemplate.value = $iO.BMSValue
             }
             Array  {
                 Write-Verbose "Array Type Handler"
-                foreach ($Stream in $BMSO.ParsedStream) {
+                foreach ($Stream in $iO.ParsedStream) {
                     if ((Verify-MessageCRC $Stream) -eq $false) {
                         Throw "CRC FAILED"
                     }
@@ -734,21 +746,21 @@ Function Get-BMSParameter {
             }
             Range  {
                 Write-Verbose "Range Type Handler"
-                if ((Verify-MessageCRC $BMSO.ParsedStream.0) -eq $false)
+                if ((Verify-MessageCRC $iO.ParsedStream) -eq $false)
                 {
                     Throw "CRC FAILED"
                 }
-                $BMSO | Add-Member -MemberType NoteProperty -Name BMSValue -Value (Get-BMSCharFromHexStream $BMSO.ParsedStream.0)
-                $DisplayTemplate = $BMSO.OriginInstruction.Instruction.Return
-                $DisplayTemplate.value = $BMSO.BMSValue
+                $iO | Add-Member -MemberType NoteProperty -Name BMSValue -Value (Get-BMSCharFromHexStream $iO.ParsedStream.0)
+                $DisplayTemplate = $iO.OriginInstruction.Instruction.Return
+                $DisplayTemplate.value = $iO.BMSValue
             }
             Default  {
-                Write-Warning ("No handler for type [" + $iO.Instruction.Handler + "]")
+                Write-Warning ("No handler for type [" + $iO.Handler + "]")
                 break
             }
         }
         if ($ExtraInfo) {
-            $BMSO
+            $iO
             $DisplayTemplate
         }
         else {
@@ -783,49 +795,66 @@ Function Sort-MessageStream
 {
     [CmdletBinding()]
     param($HexString)
-    $MultiPart = New-Object PSCustomObject
+    $MultiPart = [ordered]@{}
     $ID = 0
     $b = 0
+    #$part holds the substring stream of the entire hex array
     $Part = New-Object System.Collections.Generic.List[System.Object]
+    #in the raw stream, for each byte, inspect for <STX> and <ETX>
     foreach ($byte in $HexString)
     {
+
         $Part.Add($HexString[$b])
         if ($HexString[$b] -match "aa")
         {
             if (($HexString[$b + 1]) -eq "55")
             {
-                $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
+                $MultiPart.Add($ID,$Part)
                 $ID++
                 $Part = New-Object System.Collections.Generic.List[System.Object]
                 Write-Verbose "New Message Continues"
             }
             else
             {
-                $MultiPart | Add-Member -Name $ID -Type NoteProperty -Value ($Part)
+                $MultiPart.Add($ID,$Part)
+                $ID++
                 Write-Verbose "No New Messages"
             }
         }
         $b++
     }
+    write-verbose $multipart.count
     return $MultiPart
 }
 
 Function Verify-MessageCRC {
     [CmdletBinding()]
-    param($HexArray)
-    $ComputablePayloadLength = ([convert]::toint16($HexArray[3],16) + 3)
-    $CRCTask = ($HexArray[1..$ComputablePayloadLength]) -join ""
-    $OldCRC = ($HexArray[($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
-    $NewCRC = (Get-CRC16 $CRCTask) -join ""
-    Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Received CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
-    if ($NewCRC -notmatch $OldCRC)
-    {
-        $false
-        Throw ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
-    }
-    else {
-        $true
-    }
+    param($iO)
+    
+    $CRCStream = [ordered]@{}
+    
+    $i=0
+    do {
+        $ComputablePayloadLength = ([convert]::toint16($iO.HexDataReceive.ParsedStream[$i][3],16) + 3)
+        $CRCTask = ($iO.HexDataReceive.ParsedStream[$i][1..$ComputablePayloadLength]) -join ""
+        $OldCRC = ($iO.HexDataReceive.ParsedStream[$i][($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
+        $NewCRC = (Get-CRC16 $CRCTask) -join ""
+        Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Received CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
+        
+        if ($NewCRC -notmatch $OldCRC)
+        {
+            $CRCStream.Add($i,$false)
+            Write-Warning ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
+        }
+        else {
+            $CRCStream.Add($i,$true)
+        }
+        $i++
+    } 
+    while (($i + 1) -le $iO.HexDataReceive.ParsedStream.Count)
+
+    $iO.HexDataReceive.Add("CRCStream",$CRCStream)
+    return $iO
     #compute/add CRC
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
 }
