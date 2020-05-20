@@ -4,6 +4,7 @@
             "Instruction": "_IDN",
             "Name": "Identification",
             "Description": "Answers REC BMS xxx where xxx is the type of BMS",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -18,6 +19,7 @@
             "Instruction": "LCD1",
             "Name": "Main_Data_1",
             "Description": "First answer is 28 how many byte data will be sent and then data message follows as 7 float values:",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -91,6 +93,7 @@
             "Instruction": "LCD3",
             "Name": "Main_Data_3",
             "Description": "First answer is 8 how many byte data will be sent and then data message follows as 8 byte values:",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -171,6 +174,7 @@
             "Instruction": "CELL",
             "Name": "Cell Voltages",
             "Description": "BMS first responds with how many BMS units are connected, then it sends the values of the cells configured in float Value",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -202,6 +206,7 @@
             "Instruction": "PTEM",
             "Name": "Cell temperatures",
             "Description": "BMS first responds with how many BMS units are connected then it sends the values of the temperature sensors in float Value",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -233,6 +238,7 @@
             "Instruction": "RINT",
             "Name": "Cell internal DC resistance",
             "Description": "BMS first responds with how many BMS units are connected then it sends the values in float Value",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -264,6 +270,7 @@
             "Instruction": "BTEM",
             "Name": "BMS temperature",
             "Description": "BMS first responds with value 1, then it sends the values of the BMS temperature sensor in float Value.",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -295,6 +302,7 @@
             "Instruction": "ERRO",
             "Name": "Error number description array",
             "Description": "First answer is 4 how many byte data will be sent and then data message follows as 4 byte values.",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -347,6 +355,7 @@
             "Instruction": "BVOL",
             "Name": "Balance end voltage",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 2.5,
@@ -364,6 +373,7 @@
             "Instruction": "BMIN",
             "Name": "Balance start voltage",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 2.5,
@@ -381,6 +391,7 @@
             "Instruction": "CMAX",
             "Name": "Cell over-voltage switch-off",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 2,
@@ -398,6 +409,7 @@
             "Instruction": "MAXH",
             "Name": "Over-voltage switch-off hysteresis per cell",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.005,
@@ -415,6 +427,7 @@
             "Instruction": "CMIN",
             "Name": "Cell-under voltage protection switch-off",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 1.8,
@@ -432,6 +445,7 @@
             "Instruction": "MINH",
             "Name": "Over- voltage switch-off hysteresis per cell",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.005,
@@ -449,6 +463,7 @@
             "Instruction": "CHAR",
             "Name": "Cell End of charging voltage",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 2,
@@ -466,6 +481,7 @@
             "Instruction": "CHIS",
             "Name": "End of charging voltage hysteresis per cell",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.005,
@@ -483,6 +499,7 @@
             "Instruction": "RAZL",
             "Name": "Cells max difference",
             "Description": "Returns voltage value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.005,
@@ -500,6 +517,7 @@
             "Instruction": "TMAX",
             "Name": "cell over temperature switch-off",
             "Description": "cell over temperature switch-off",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": -20,
@@ -517,6 +535,7 @@
             "Instruction": "TMIN",
             "Name": "Under-temperature charging disable",
             "Description": "Under-temperature charging disable",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": -30,
@@ -534,6 +553,7 @@
             "Instruction": "TBAL",
             "Name": "BMS over-temperature switch-off",
             "Description": "BMS over-temperature switch-off",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": -20,
@@ -551,6 +571,7 @@
             "Instruction": "BMTH",
             "Name": "BMS over temperature switch-off hysteresis",
             "Description": "BMS over temperature switch-off hysteresis",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 1,
@@ -568,6 +589,7 @@
             "Instruction": "IOFF",
             "Name": "Current measurement zero offset",
             "Description": "Current measurement zero offset",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": -2,
@@ -585,6 +607,7 @@
             "Instruction": "IOJA",
             "Name": "Voltage to current coefficient",
             "Description": "Voltage to current coefficient",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.0005,
@@ -602,6 +625,7 @@
             "Instruction": "CYCL",
             "Name": "Number of full battery pack cycles",
             "Description": "Number of full battery pack cycles",
+            "Common": true,
             "ReadOnly": false,
             "Range": {
                 "Min": 0,
@@ -619,6 +643,7 @@
             "Instruction": "CAPA",
             "Name": "Battery pack capacity",
             "Description": "Battery pack capacity",
+            "Common": true,
             "ReadOnly": false,
             "Range": {
                 "Min": 1,
@@ -636,6 +661,7 @@
             "Instruction": "CHEM",
             "Name": "Li-ion chemistry",
             "Description": "Li-ion chemistry",
+            "Common": true,
             "ReadOnly": false,
             "Range": {
                 "Min": 1,
@@ -653,6 +679,7 @@
             "Instruction": "SOCH",
             "Name": "SOC end of charge hysteresis",
             "Description": "SOC end of charge hysteresis",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.005,
@@ -670,6 +697,7 @@
             "Instruction": "SOCS",
             "Name": "SOC manual re-set",
             "Description": "SOC manual re-set",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.01,
@@ -687,6 +715,7 @@
             "Instruction": "CHAC",
             "Name": "Charge coefficient (0-3C)",
             "Description": "Charge coefficient (0-3C)",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.01,
@@ -704,6 +733,7 @@
             "Instruction": "DCHC",
             "Name": "Discharge coefficient (0-3C)",
             "Description": "Discharge coefficient (0-3C)",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0.01,
@@ -721,6 +751,7 @@
             "Instruction": "SISN",
             "Name": "Number of inverter devices on the bus",
             "Description": "Number of inverter devices on the bus",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 1,
@@ -738,6 +769,7 @@
             "Instruction": "MAXC",
             "Name": "Maximum charge current per inverter device",
             "Description": "Maximum charge current per inverter device",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 5,
@@ -755,6 +787,7 @@
             "Instruction": "MAXD",
             "Name": "Maximum discharge current per inverter device",
             "Description": "Maximum discharge current per inverter device",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 5,
@@ -772,6 +805,7 @@
             "Instruction": "CLOW",
             "Name": "cell under-voltage discharge protection",
             "Description": "cell under-voltage discharge protection",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 1.8,
@@ -789,6 +823,7 @@
             "Instruction": "CANF",
             "Name": "CAN Frequency",
             "Description": "CAN Frequency",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 1,
@@ -806,6 +841,7 @@
             "Instruction": "VMAX",
             "Name": "Number of exceeded values of CMAX",
             "Description": "Number of exceeded values of CMAX",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0,
@@ -823,6 +859,7 @@
             "Instruction": "VMIN",
             "Name": "Number of exceeded values of CMIN",
             "Description": "Number of exceeded values of CMIN",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 0,
@@ -840,6 +877,7 @@
             "Instruction": "SWVR",
             "Name": "BMS software version",
             "Description": "BMS software version",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -854,6 +892,7 @@
             "Instruction": "HWVR",
             "Name": "BMS hardware version",
             "Description": "BMS hardware version",
+            "Common": true,
             "ReadOnly": true,
             "Range": null,
             "Return": {
@@ -868,6 +907,7 @@
             "Instruction": "EAVC",
             "Name": "Even cells calibration value",
             "Description": "Even cells calibration value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": -0.0003,
@@ -885,6 +925,7 @@
             "Instruction": "ODDC",
             "Name": "Odd cells calibration value",
             "Description": "Odd cells calibration value",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": -0.0003,
@@ -902,6 +943,7 @@
             "Instruction": "REFC",
             "Name": "ADC reference voltage 5.000 V +/- 3 mV",
             "Description": "ADC reference voltage 5.000 V +/- 3 mV",
+            "Common": false,
             "ReadOnly": false,
             "Range": {
                 "Min": 4.007,
