@@ -801,14 +801,10 @@ Function Sort-MessageStream
     #$part holds the substring stream of the entire hex array
     $Part = New-Object System.Collections.Generic.List[System.Object]
     #in the raw stream, for each byte, inspect for <STX> and <ETX>
-    foreach ($byte in $HexString)
-    {
-
+    foreach ($byte in $HexString) {
         $Part.Add($HexString[$b])
-        if ($HexString[$b] -match "aa")
-        {
-            if (($HexString[$b + 1]) -eq "55")
-            {
+        if ($HexString[$b] -match "aa") {
+            if (($HexString[$b + 1]) -eq "55") {
                 $MultiPart.Add($ID,$Part)
                 $ID++
                 $Part = New-Object System.Collections.Generic.List[System.Object]
@@ -822,8 +818,7 @@ Function Sort-MessageStream
             }
         }
         $b++
-    }
-    write-verbose $multipart.count
+        }
     return $MultiPart
 }
 
