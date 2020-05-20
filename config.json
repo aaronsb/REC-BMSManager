@@ -10,7 +10,7 @@
     },
     "Session": {
         "SessionThrottle": 250,
-        "SessionTimeout": 1000
+        "SessionTimeout": 5000
     },
     "Message": {
         "Components": {
