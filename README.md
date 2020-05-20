@@ -15,4 +15,10 @@ Other considerations:
 
 This is a work in progress...
 
+
+Findings and Notes
+*REC-BMS 1Q is based on an Amtel AVR32 90CAN32 microcontroller
+*Binary value floats (single precision, 32 bit) are little endian and need to be processed accordingly.
+
+
 ![progress so far](https://raw.githubusercontent.com/aaronsb/ps-recbms/master/recbms.gif)
