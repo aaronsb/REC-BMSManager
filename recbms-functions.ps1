@@ -85,7 +85,7 @@ Function Get-CRC16($hexdata) {
     
      
     
-        Foreach ($l in $bytes) 
+        ForEach ($l in $bytes) 
     
         {
     
@@ -430,7 +430,7 @@ Param($iO)
 
         #set properties in the serial port.
         try {
-            foreach ($item in $SerialConfigurables) {
+            ForEach ($item in $SerialConfigurables) {
                 $port.$item = $config.Client.$item
             }
         }
@@ -737,7 +737,7 @@ Function Get-BMSParameter {
             }
             Array  {
                 Write-Verbose "Array Type Handler"
-                foreach ($Stream in $iO.ParsedStream) {
+                ForEach ($Stream in $iO.ParsedStream) {
                     if ((Verify-MessageCRC $Stream) -eq $false) {
                         Throw "CRC FAILED"
                     }
@@ -801,7 +801,7 @@ Function Sort-MessageStream
     #$part holds the substring stream of the entire hex array
     $Part = New-Object System.Collections.Generic.List[System.Object]
     #in the raw stream, for each byte, inspect for <STX> and <ETX>
-    foreach ($byte in $HexString) {
+    ForEach ($byte in $HexString) {
         $Part.Add($HexString[$b])
         if ($HexString[$b] -match "aa") {
             if (($HexString[$b + 1]) -eq "55") {
@@ -829,21 +829,20 @@ Function Verify-MessageCRC {
     $CRCStream = [ordered]@{}
     
     $i=0
-    do {
+        do {
         $ComputablePayloadLength = ([convert]::toint16($iO.HexDataReceive.ParsedStream[$i][3],16) + 3)
         $CRCTask = ($iO.HexDataReceive.ParsedStream[$i][1..$ComputablePayloadLength]) -join ""
         $OldCRC = ($iO.HexDataReceive.ParsedStream[$i][($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
         $NewCRC = (Get-CRC16 $CRCTask) -join ""
         Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Received CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
         
-        if ($NewCRC -notmatch $OldCRC)
-        {
-            $CRCStream.Add($i,$false)
-            Write-Warning ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
-        }
-        else {
-            $CRCStream.Add($i,$true)
-        }
+        if ($NewCRC -notmatch $OldCRC) {
+                $CRCStream.Add($i,$false)
+                Write-Warning ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
+            }
+            else {
+                $CRCStream.Add($i,$true)
+            }
         $i++
     } 
     while (($i + 1) -le $iO.HexDataReceive.ParsedStream.Count)
@@ -856,7 +855,7 @@ Function Verify-MessageCRC {
 
 Function Get-BMSStatus
 {param()
-    foreach ($instruction in ((Get-BMSInstructionList -Common).Instruction))
+    ForEach ($instruction in ((Get-BMSInstructionList -Common).Instruction))
     {
         Get-BMSParameter $instruction -NoFormatList
     }
