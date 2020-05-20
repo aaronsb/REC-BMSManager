@@ -145,43 +145,6 @@ Function Convert-HexToByteArray {
 Function Get-BMSInstructionList {
     [CmdletBinding()]
     Param([ValidateSet("String","Array","Range")][String]$Handler,[Switch]$Common)
-    DynamicParam {
- 
-        # Set the dynamic parameters' name
-        $ParameterName = 'Category'
-
-        # Create the dictionary
-        $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-
-        # Create the collection of attributes
-        $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
-
-        # Create and set the parameters' attributes
-        $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
-        $ParameterAttribute.Mandatory = $false
-        $ParameterAttribute.Position = 1
-
-        # Add the attributes to the attributes collection
-        $AttributeCollection.Add($ParameterAttribute)
-
-        # Generate and set the ValidateSet
-        # get just instruction names from the library
-        $arrSet = (gc .\instructionset.json | ConvertFrom-Json).Command.Category | Sort-Object -Unique
-        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
-
-        # Add the ValidateSet to the attributes collection
-        $AttributeCollection.Add($ValidateSetAttribute)
-
-        # Create and return the dynamic parameter
-        $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
-        $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
-        return $RuntimeParameterDictionary
-    }
-
-    begin {
-                #give dynamic parameter a friendly parameter name
-                $Category = $PSBoundParameters[$ParameterName]
-    }
 
     process {
         $object = gc .\instructionset.json | ConvertFrom-Json
@@ -214,7 +177,7 @@ Function Get-BMSConfigMeta {
 
 Function Get-BMSInstruction {
     [CmdletBinding()]
-    Param()
+    Param($InstructionListArray)
     DynamicParam {
  
         # Set the dynamic parameters' name
@@ -228,7 +191,7 @@ Function Get-BMSInstruction {
 
         # Create and set the parameters' attributes
         $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
-        $ParameterAttribute.Mandatory = $true
+        $ParameterAttribute.Mandatory = $false
         $ParameterAttribute.Position = 1
 
         # Add the attributes to the attributes collection
@@ -251,6 +214,7 @@ Function Get-BMSInstruction {
     begin {
         #give dynamic parameter a friendly parameter name
         $Instruction = $PSBoundParameters[$ParameterName]
+        $InstructionList = [ordered]@{}
     }
 
     process {
