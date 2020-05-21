@@ -2,12 +2,13 @@
     "Command": [
         {
             "Alias": "Identity",
-            "Instruction": "*IDN",
+            "Instruction": "_IDN",
             "Name": "Identification",
             "Description": "Answers REC BMS xxx where xxx is the type of BMS",
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Device identification",
                 "Unit": "Description",
@@ -24,6 +25,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": "null",
             "Return": {
                 "Description": "Array of values",
                 "Unit": "Array",
@@ -32,7 +34,7 @@
                         {
                             "Description": "message length in bytes",
                             "Unit": "count",
-                            "Value": "integer",
+                            "Value": "int",
                             "Position": 0,
                             "Part": 0
                         },
@@ -99,6 +101,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Array of values",
                 "Unit": "Array",
@@ -181,6 +184,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Array of values",
                 "Unit": "Array",
@@ -214,6 +218,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Array of values with variable value template",
                 "Unit": "Array",
@@ -247,6 +252,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Array of values with variable value template",
                 "Unit": "Array",
@@ -280,6 +286,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Array of values with variable value template",
                 "Unit": "Array",
@@ -313,6 +320,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Variable array of values",
                 "Unit": "Array",
@@ -370,6 +378,7 @@
                 "Min": 2.5,
                 "Max": 4.3
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -389,6 +398,7 @@
                 "Min": 2.5,
                 "Max": 4.3
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -408,6 +418,7 @@
                 "Min": 2,
                 "Max": 4.3
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -427,6 +438,7 @@
                 "Min": 0.005,
                 "Max": 2
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -446,6 +458,7 @@
                 "Min": 1.8,
                 "Max": 4
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -465,6 +478,7 @@
                 "Min": 0.005,
                 "Max": 2
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -484,6 +498,7 @@
                 "Min": 2,
                 "Max": 4.3
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -503,6 +518,7 @@
                 "Min": 0.005,
                 "Max": 2
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -522,6 +538,7 @@
                 "Min": 0.005,
                 "Max": 1
             },
+            "Value": "float",
             "Return": {
                 "Description": "volts",
                 "Unit": "volts",
@@ -541,6 +558,7 @@
                 "Min": -20,
                 "Max": 65
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
@@ -560,6 +578,7 @@
                 "Min": -30,
                 "Max": 65
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
@@ -579,6 +598,7 @@
                 "Min": -20,
                 "Max": 65
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
@@ -598,6 +618,7 @@
                 "Min": 1,
                 "Max": 30
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
@@ -617,6 +638,7 @@
                 "Min": -2,
                 "Max": 2
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "current in amps",
                 "Unit": "Amps",
@@ -636,6 +658,7 @@
                 "Min": 0.0005,
                 "Max": 0.5
             },
+            "Value": "float",
             "Return": {
                 "Description": "coefficient",
                 "Unit": "mu",
@@ -655,10 +678,11 @@
                 "Min": 0,
                 "Max": 8000
             },
+            "Value": "int",
             "Return": {
                 "Description": "battery pack cycles",
                 "Unit": "count",
-                "Value": "integer"
+                "Value": "int"
             },
             "Category": "Pack",
             "Handler": "Range"
@@ -674,6 +698,7 @@
                 "Min": 1,
                 "Max": 5000
             },
+            "Value": "float",
             "Return": {
                 "Description": "capacity in Amp hours",
                 "Unit": "Amps",
@@ -693,6 +718,7 @@
                 "Min": 1,
                 "Max": 5
             },
+            "Value": "unsigned_char",
             "Return": {
                 "Description": "chemistry selection via lookup",
                 "Unit": "identity",
@@ -712,6 +738,7 @@
                 "Min": 0.005,
                 "Max": 0.99
             },
+            "Value": "float",
             "Return": {
                 "Description": "Returns float value 0 – 1.0",
                 "Unit": "percent",
@@ -731,6 +758,7 @@
                 "Min": 0.01,
                 "Max": 1
             },
+            "Value": "float",
             "Return": {
                 "Description": "Returns float value 0 – 1.0",
                 "Unit": "percent",
@@ -750,6 +778,7 @@
                 "Min": 0.01,
                 "Max": 1
             },
+            "Value": "float",
             "Return": {
                 "Description": "Returns float value 0-3.0 (default 0.6)",
                 "Unit": "mu",
@@ -769,6 +798,7 @@
                 "Min": 0.01,
                 "Max": 3
             },
+            "Value": "float",
             "Return": {
                 "Description": "Returns float value 0-3.0 (default 1.5)",
                 "Unit": "mu",
@@ -788,6 +818,7 @@
                 "Min": 1,
                 "Max": 6
             },
+            "Value": "unsigned_char",
             "Return": {
                 "Description": "default is 1",
                 "Unit": "count",
@@ -807,6 +838,7 @@
                 "Min": 5,
                 "Max": 345
             },
+            "Value": "float",
             "Return": {
                 "Description": "amperage per inverter",
                 "Unit": "Amps",
@@ -826,6 +858,7 @@
                 "Min": 5,
                 "Max": 345
             },
+            "Value": "float",
             "Return": {
                 "Description": "amperage per inverter",
                 "Unit": "Amps",
@@ -845,6 +878,7 @@
                 "Min": 1.8,
                 "Max": 4.2
             },
+            "Value": "float",
             "Return": {
                 "Description": "voltage per cell",
                 "Unit": "Volts",
@@ -864,6 +898,7 @@
                 "Min": 1,
                 "Max": 2
             },
+            "Value": "unsigned_char",
             "Return": {
                 "Description": "1 is 250 kb/s 2 is 500 kb/s",
                 "Unit": "identity",
@@ -883,10 +918,11 @@
                 "Min": 0,
                 "Max": 8000
             },
+            "Value": "int",
             "Return": {
                 "Description": "Count of cycles of cells over max voltage",
                 "Unit": "count",
-                "Value": "integer"
+                "Value": "int"
             },
             "Category": "Error",
             "Handler": "Range"
@@ -902,10 +938,11 @@
                 "Min": 0,
                 "Max": 8000
             },
+            "Value": "int",
             "Return": {
                 "Description": "Count of cycles of cells under minimum voltage",
                 "Unit": "count",
-                "Value": "integer"
+                "Value": "int"
             },
             "Category": "Error",
             "Handler": "Range"
@@ -918,6 +955,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Current version of software on BMS",
                 "Unit": "Description",
@@ -934,6 +972,7 @@
             "Common": true,
             "ReadOnly": true,
             "Range": null,
+            "Value": null,
             "Return": {
                 "Description": "Hardware revision of BMS",
                 "Unit": "Description",
@@ -953,6 +992,7 @@
                 "Min": -0.0003,
                 "Max": 0.0003
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "even cell calibration value in volts",
                 "Unit": "volts",
@@ -972,6 +1012,7 @@
                 "Min": -0.0003,
                 "Max": 0.0003
             },
+            "Value": "signed_float",
             "Return": {
                 "Description": "odd cell calibration value in volts",
                 "Unit": "volts",
@@ -986,15 +1027,12 @@
             "Name": "ADC reference voltage 5.000 V +/- 3 mV",
             "Description": "Analog Digital Converter reference voltage 5.000 V +/- 3 mV",
             "Common": false,
-            "ReadOnly": false,
-            "Range": {
-                "Min": 4.007,
-                "Max": 5.003
-            },
+            "ReadOnly": true,
+            "Value": "float",
             "Return": {
                 "Description": "ADC reference voltage value",
                 "Unit": "volts",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "BMS",
             "Handler": "Range"
