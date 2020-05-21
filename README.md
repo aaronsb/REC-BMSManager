@@ -1,4 +1,4 @@
-# ps-recbms
+# PS-RECBMS: A Powershell based management tool for REC-BMS battery management tools.
 Powershell based management for REC-BMS battery management
 
 The intention of this set of management functions is as follows:
