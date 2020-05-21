@@ -2,7 +2,7 @@
     "Command": [
         {
             "Alias": "Identity",
-            "Instruction": "_IDN",
+            "Instruction": "*IDN",
             "Name": "Identification",
             "Description": "Answers REC BMS xxx where xxx is the type of BMS",
             "Common": true,
