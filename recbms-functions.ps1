@@ -415,10 +415,13 @@ Param($Instructions)
     
     begin {
         #instance instruction library
-        $Library = (gc .\instructionset.json | ConvertFrom-Json).Command
         $config = Get-BMSConfigMeta
+        #zzz todo merge config and library calls together 
+        $Library = $config.Command
+        
         #clear any previous object name $iO
         $iO = $null
+        $iOHandlerCount = 0
         #instance the instructionObject as an ordered dictionary
 
         #New-CmdStack takes the incoming instructions and assigns them to an ordered hash array
@@ -454,7 +457,24 @@ Param($Instructions)
             }
             $HexStack
         }
-
+        Function Count-iOHandlerEvents {
+            Param($iO)
+            $HandlerCount = 0
+            $i = 0
+            do {
+                $Book = $null
+                $Book = $Library | ?{$_.Instruction -eq $iO.CmdStack.Keys[$i]}
+                if ($Book.Return.Value -ne "Array") {
+                    $HandlerCount = $HandlerCount + $Book.Return.Unit.Count
+                }
+                else {
+                    $HandlerCount = $HandlerCount + ($Book.Return.Unit.Array.Part | Sort-Object -Unique).Count
+                }
+                
+                $i++
+            } until ($i -gt $iO.CmdStack.Count)
+            $HandlerCount
+        }
         Function New-InstructionObject {
             Param($Instructions)
 
@@ -475,15 +495,7 @@ Param($Instructions)
             return $iO
         }
 
-        Function Count-iOHandlerEvents {
-            Param($iO)
-            $i = 0
-            do {
-                $Book = $Library | ?{$_.Instruction -eq $iO.CmdStack[$i].Keys}
-                $Book.
-                $i++
-            } until ($i -gt $iO.CmdStack.Count)
-        }
+        
         #
         
     }
@@ -577,7 +589,7 @@ Param($Instructions)
         #next better version of this should be to define a custom class for this.
         
         $HexDataInspection = ((Convert-HexToByteArray -HexString ($HexStream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-        $iO | Add-Member -Name "HexStreamSend" -Type NoteProperty -Value (@{"RawStream"=$HexStream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $HexStream)})
+        $iO | Add-Member -Name "HexStreamSend" -Type NoteProperty -Value (@{"HandlerEventCount"=(Count-iOHandlerEvents $iO);"RawStream"=$HexStream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $HexStream)})
         return $iO
     }
 }
@@ -611,7 +623,7 @@ Param($iO)
         #set properties in the serial port.
         try {
             ForEach ($item in $SerialConfigurables) {
-                $port.$item = $config.Client.$item
+                $port.$item = $config.Config.Client.$item
             }
         }
         catch {
@@ -660,6 +672,11 @@ Param($iO)
         #create a new pscustomobject array to store multiparts of stream
         $MultiPartObject = New-Object PSCustomObject
         
+        #Number of expected message parts to be returned.
+        #Usually arrays are 2 parts, informational then the data.
+        #everything else is 1 part
+        $PartCount = $iO.HexStreamSend.HandlerEventCount
+
         #initalize byte index
         $i = 0
         
@@ -677,23 +694,6 @@ Param($iO)
         
         #initalize (sub)length value 
         $StreamPartLength = 0
-        
-        #initalize total number of message parts expected as defined in library
-        switch ($iO.Handler) {
-            Range  {
-                $partCount = 1
-            }
-            String {
-                $partCount = 1
-            }
-            Array  {
-                $partCount = ($iO.Return.Value.Array.Part | Sort-Object -unique).Count
-            }
-            Default {
-                $partCount = $null
-            }
-        }
-        Write-Verbose ("Serial Session Handler: [" + $iO.Handler  + "] Parts: ["+ $partCount + "]")
 
         #initalize message part index
         $IndexMessagePart = 1
@@ -701,10 +701,8 @@ Param($iO)
         #initialize empty array to store all bytes
         $Stream = New-Object System.Collections.Generic.List[System.Object]
 
-        if ($iO.Handler -match "Array")
-        {
-            Write-Verbose ("Expecting $partCount parts in bytestream")
-        }
+        Write-Verbose ("Expecting " + $PartCount + " parts in bytestream")
+
 
         #start the timer for the receieve event.
         $WatchDog.Start()
@@ -721,7 +719,7 @@ Param($iO)
                 #bail from loop before the next ReadByte() so we don't incur a buffer exception.
 
 
-                if ($IndexMessagePart -gt $partCount)
+                if ($IndexMessagePart -gt $PartCount)
                 {
                     Write-Verbose ("Reached expected message part count defined for this instruction.")
                     $port.Close()
