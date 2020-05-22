@@ -185,7 +185,7 @@ Function Get-BMSInstructionList {
 
 
 Function Get-BMSConfigMeta {
-    gc .\config.json | ConvertFrom-Json
+    (gc .\instructionset.json | ConvertFrom-Json)
 }
 
 Function Approve-BMSInstructionList {
@@ -215,7 +215,7 @@ Function Approve-BMSInstructionList {
                 #give an option of just typing an instruction in - this will be cast into a single hashtable
                 #with the instruction set as a query only
                 Write-Verbose ("Casting command string to single query")
-                $Command = @{$Command=""}
+                $Command = @{$Command="?"}
             }
             "Object[]" {
                 Write-Verbose "Case: Command Type Array of Strings"
@@ -235,6 +235,9 @@ Function Approve-BMSInstructionList {
         
         #instance an ordered array to contain packaged instruction(s)
         $InstructionStack = New-Object System.Collections.Generic.List[System.Object]
+
+        #instance the library
+        $Library = (gc .\instructionset.json | ConvertFrom-Json).Command
 
         #define a private validation function
 
@@ -260,7 +263,7 @@ Function Approve-BMSInstructionList {
             return $thisMinMax
         }
 
-        Function private:ValidateInstructionStack{
+        Function private:ValidateInstructionStack {
             param($Command)
             $CommandCopy = @{}
             foreach ($Key in $Command.Keys)
@@ -268,6 +271,8 @@ Function Approve-BMSInstructionList {
                 Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction Validation")
                 #get instruction book from library
                 $Book = $null
+                #clear the previous hex encoding
+                $HexEncoded = $null
                 
                 $Book = ($Library | ?{$_.Instruction -eq $Key.ToUpper()})
                 if (!$Book) {
@@ -283,7 +288,8 @@ Function Approve-BMSInstructionList {
                     if (($Command.$Key.Length -eq "0") -or ($Command.$Key -eq "?")) {
                         #if data is empty or query, turn it into a query or assert as a query
                         Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Null Instruction Data: Asserting to Query")
-                        $CommandCopy.Add(($Key),"?")
+                        $HexEncodedInstruction = [char]"?" | %{"{0:x2}" -f [int16]$_}
+                        $CommandCopy.Add(($Key.ToUpper()),(@{"Hex"=$HexEncodedInstruction;"Plain"=$Command.$Key}))
                     }
                     else {
                         Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Validating Instruction DataType")
@@ -294,10 +300,11 @@ Function Approve-BMSInstructionList {
                             #in a more strict implementation, this instruction should probably just be discarded.
                             Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Expected Query with ReadOnly Instruction")
                             Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Disallowed Instruction Data: Setting to Query")
-                            $CommandCopy.Add(($Key),"?")
+                            $HexEncodedInstruction = [char]"?" | %{"{0:x2}" -f [int16]$_}
+                            $CommandCopy.Add(($Key.ToUpper()),(@{"Hex"=$HexEncodedInstruction;"Plain"=$Command.$Key}))
                         }
                         else {
-                            #region verify instruction is of the correct value type (float, int, signed_float, etc)
+                            #region verify instruction is of the correct value type (float, int, char etc)
                             #verify instruction is within the range of correct value for type.
 
                             #initialize flag object to tag verification
@@ -309,61 +316,49 @@ Function Approve-BMSInstructionList {
                                         Write-Verbose ("[" + $Command.$Key + "]: Value Is float")
                                         $thisTypeValid = $true
                                         $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                        $HexEncodedInstruction = [System.BitConverter]::GetBytes([float]$Command.$Key) | %{"{0:x2}" -f $_}
                                     }
                                     else {
                                         Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT float")
                                     }
                                 }
                                 "int" {
-                                    if ($Command.$Key -as [int]) {
+                                    if (($Command.$Key -as [int]) -or ($Command.$Key -eq 0)) {
                                         Write-Verbose ("[" + $Command.$Key + "]: Value Is int")
                                         $thisTypeValid = $true
                                         $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                        #if a value is actually stored as a float, it will be rounded to nearest int
+                                        #but display as int in the non encoded key value
+                                        $HexEncodedInstruction = [int]$Command.$Key | %{"{0:x2}" -f [int16]$_}
                                     }
                                     else {
                                         Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT int")
                                     }
                                 }
-                                "null" {
-                                    if ($Command.$Key -as [char]) {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is char")
-                                        $thisTypeValid = $true
-                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    }
-                                    else {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT char")
-                                    }
-                                }
                                 "array" {
-                                    if ($Command.$Key -as [char]) {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is char")
+                                    if ($Command.$Key) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is an array")
                                         $thisTypeValid = $true
-                                        #array types are always read only, so min and max don't actually do anything. set to true.
+                                        #array types are always read only and have a return handler elsewhere
+                                        # min and max don't actually do anything. set to true.
+                                        #set encoded instruction to query always
                                         $thisMinMax.Max = $true
                                         $thisMinMax.Min = $true
+                                        $HexEncodedInstruction = [char]"?" | %{"{0:x2}" -f [int16]$_}
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT an array")
+                                    }
+                                }
+                                "char" {
+                                    if ($Command.$Key -as [char]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is char")
+                                        $thisTypeValid = $true
+                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                        $HexEncodedInstruction = [char]$Command.$Key | %{"{0:x2}" -f [int16]$_}
                                     }
                                     else {
                                         Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT char")
-                                    }
-                                }
-                                "signed_float" {
-                                    if ($Command.$Key -as [float]) {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is signed_float")
-                                        $thisTypeValid = $true
-                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    }
-                                    else {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT signed_float")
-                                    }
-                                }
-                                "unsigned_char" {
-                                    if ($Command.$Key -as [char]) {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is unsigned_char")
-                                        $thisTypeValid = $true
-                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    }
-                                    else {
-                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT unsigned_char")
                                     }
                                 }
                                 Default {
@@ -376,7 +371,7 @@ Function Approve-BMSInstructionList {
                             }
                             if (($thisMinMax.Max -eq $true) -and ($thisMinMax.Min -eq $true) -and ($thisTypeValid -eq $true)) {
                                 Write-Verbose ("[" + $Key + "]: Added to validated instruction stack")
-                                $CommandCopy.Add(($Key),($Command.$Key))
+                                $CommandCopy.Add(($Key.ToUpper()),(@{"Hex"=$HexEncodedInstruction;"Plain"=$Command.$Key}))
                             }
                             else {
                                 Write-Verbose ("[" + $Key + "]: NOT Added to validated instruction stack")
@@ -422,118 +417,167 @@ Param($Instructions)
         #instance instruction library
         $Library = (gc .\instructionset.json | ConvertFrom-Json).Command
         $config = Get-BMSConfigMeta
+        #clear any previous object name $iO
+        $iO = $null
         #instance the instructionObject as an ordered dictionary
-        $iO = New-Object PSCustomObject
-        Function Private:InstructionObject {
+
+        #New-CmdStack takes the incoming instructions and assigns them to an ordered hash array
+        Function New-CmdStack {
             Param($Instructions)
-            #initialize instruction count
-            $i = 0
+            $CmdStack = @()
+            ForEach ($Key in $Instructions.Keys) {
+                #add to arrayusing unary array construction operator (,)
+                $CmdStack += ,@{$Key = ($Instructions.$Key)}
+            }
+            $CmdStack
+        }
+        #New-HexCmdStack takes a list of nested hash objects where the data in is another hash
+        #with both the properly encoded hex value (as defined by the instruction library)
+        #and raw value. This function concats the instruction to a hex string with the instruction
+        #into a single sentence. It returns an array with index parity to CmdStacks, if it ingests
+        #it first.
+        Function New-HexCmdStack {
+            Param($Instructions)
+            $HexStack = @()
+            ForEach ($Key in $Instructions.Keys) {
+                ForEach ($item in $Instructions.$Key) {
+                    #HexInstruction cleared before each hex encoded command
+                    $HexInstruction = @()
+                    ForEach ($char in $Key.ToCharArray()) {
+                        $HexInstruction += "{0:x2}" -f [int16][char]$char 
+                    }
+                    $HexInstruction += $item.Hex
+                }
+                #emit each string. When returned, it is ordered array
+                #using unary array construction operator (,)
+                $HexStack += ,@($HexInstruction)
+            }
+            $HexStack
+        }
+
+        Function New-InstructionObject {
+            Param($Instructions)
+
+            #The instructionObject is the container for the instructions reqested, sent, receieved, and decoded.
+            
             #make a new container for everything
             $iO = New-Object PSCustomObject
-            #initalize a stack array
-            $Stack = @()
-            #create an ordered array System.Collections.Specialized.OrderedDictionary,
-            ForEach ($key in $Instructions.Keys) {
-                $Stack += [ordered]@{$Key = ($Instructions.$Key)}
-                $i++
-            }
-            
-            #add the stack to the container
-            $iO | Add-Member -Name "Stack" -Type NoteProperty -Value $Stack
-        
-            #zzz todo the stream processor right below this comment will probably end up performing the
-            #conversion to hex values, since various values in commands need to be formatted in
-            #various ways like double precision float, flot, int, and char, as defined by dictionary
-            
-            #build a concated stream from the stack 
-            $Stream = (0..$i | %{($io.Stack[$_].Keys + $io.Stack[$_].Values)}) -join ""
-            
-            #add the concated stream to the container
-            $iO | Add-Member -Name "Stream" -Type NoteProperty -Value $Stream
 
-            $HexStream = $iO.Stream.ToCharArray() | %{"{0:x}" -f [int16]$_}
-            $iO | Add-Member -Name "HexInstructionStream" -Type NoteProperty -Value $HexStream
+            #CmdStack has the plain text uncatenated values for the instructions. It is mostly for ease of diagnostics
+            #perhaps in the future an optimization will be to just read the first four bytes from the hexstack to
+            #identify the instruction again
+            $iO | Add-Member -Name "CmdStack" -Type NoteProperty -Value (New-CmdStack -Instructions $Instructions)
+            
+            #HexStack is the concated instruction:value pair to maintain index consistency with CmdStack
+            $iO | Add-Member -Name "HexStack" -Type NoteProperty -Value (New-HexCmdStack -Instructions $Instructions)
+
             #return the container
             return $iO
         }
+
+        Function Count-iOHandlerEvents {
+            Param($iO)
+            $i = 0
+            do {
+                $Book = $Library | ?{$_.Instruction -eq $iO.CmdStack[$i].Keys}
+                $Book.
+                $i++
+            } until ($i -gt $iO.CmdStack.Count)
+        }
+        #
+        
     }
 
     process {
         #load configuration metadata for use
         
-    
-        if (!$Stack)
+        #Generate the InstructionObject container that holds the entire instruction stack and metadata
+        #$Instructions should be verified with Approve-BMSInstructionList, which emits a hash array of instruction:command pairs
+        #after verifying each against an instruction dictionary (encyclopedia?)
+        $iO = New-InstructionObject -Instructions $Instructions
+
+        if (!$iO)
         {
             #if no instruction given, just barf out all of them. What could go wrong?
-            Throw "Need at least one instruction hash pair object"
+            Throw "Need at least one instruction hash pair object. Preferably validated with Approve-BMSInstructionList first."
         }
 
-        if (!$Stack.GetType().Name -ne "Hashtable")
-        {
-            Throw "Stack object must be a hashtable. Preferably validated with Approve-BMSInstructionList first."
-        }
+        Write-Verbose ("Evaluating instruction stack object count. HexStack:CmdStack")
+        if ($iO.HexStack.Count -ne $iO.CmdStack.Count) {
+            #small inspection to see if there's only one instruction on the stack.
+            #counting number of items on multidimensional array with only one instruction on stack counts the number of bytes in the single instruction
 
-        Write-Verbose ("Found" + $stack.count + "instructions to serialize.")
+            #storing key seperately. reference to object doesn't work if you just cast key directly to reference
+            $CmdKey = $iO.CmdStack.Keys
+            $CmdCharCount = ($iO.CmdStack."$CmdKey".Plain.Count + $CmdKey.ToCharArray().Count)
+            if ($iO.HexStack.Count -ne $CmdCharCount) {
+                #yep, it's broken
+                $Exception = [Exception]::new("Stack Count Mismatch!`r`nHexStack.Count: [" + $iO.HexStack.Count + "]`r`nCmdStack.Count: [" + $iO.CmdStack.Count + "]")
+                $ErrorRecord = [System.Management.Automation.ErrorRecord]::new(
+                    $Exception,
+                    "HexStack count does not match CmdStack count",
+                    [System.Management.Automation.ErrorCategory]::InvalidOperation,
+                    $iO # usually the object that triggered the error, if possible
+                )
+            $PSCmdlet.ThrowTerminatingError($ErrorRecord)
+            }
+            else {
+                Write-Verbose ("Evaluating single instruction length")
+                #phew, it's just one instruction that gets counted weird. Carry on.
+            }
+        }
+        Else {
+            Write-Verbose ("Stack count validation matches")
+        }
+        Write-Verbose ("Found" + $iO.HexStack.Count + " instructions to serialize.")
         #region enumerate instructions
         #assemble header
         #message is the entire message to be sent, including Start, End, checksums, etc.
         #instruction is just the instrction portion of the message.
         
-        #instance two arrays, one for message, and one for the instruction only.
-        $hexdata = New-Object System.Collections.Generic.List[System.Object]
-        $instruction = New-Object System.Collections.Generic.List[System.Object]
-
-        #assemble the header, add to message.
+        #Instance array for hexstream
+        $HexStream = New-Object System.Collections.Generic.List[System.Object]
         
-        $hexdata.Add($config.Message.Components.STX.ToLower())
-        $hexdata.Add($config.Message.Components.DST.ToLower())
-        $hexdata.Add($config.Message.Components.SND.ToLower())
-        Write-Verbose ("Header (STX)(DST)(SND) assembled: " + $hexdata )
+        #assemble the header, add to message.
+        $HexStream.Add($config.Config.Message.Components.STX.ToLower())
+        $HexStream.Add($config.Config.Message.Components.DST.ToLower())
+        $HexStream.Add($config.Config.Message.Components.SND.ToLower())
+        Write-Verbose ("[HexStream]: Header (STX)(DST)(SND) appended")
 
         #assemble the instruction subarray
-        $iO.Instruction.ToCharArray() | %{"{0:x}" -f [int16]$_} | %{$instruction.Add($_)}
-        
-        if ($value) {
-            #zzz TODO: construct a "WRITE" message. For now, let's just concentrate on read only messages ;)
-            #parse instruction set to package value being set here
-            $Query = $false
-            Write-Warning "Not Implemented. (yet!)"
-            break
-        }
-        else
-        {
-            #no $value defined, so this will be a read only query.
-            #add configured query value to subarray. It's default is am ASCII ? (0x3F)
-            $instruction.Add($config.message.components.QRY.ToLower())
-            $query = $true
-            Write-Verbose ("Instruction is Query (?): " + $config.message.components.QRY.ToLower())
-        }
 
-        #count length of instruction bytes in payload, add to message.
-        $hexdata.Add("{0:x2}" -f [int16]$instruction.count)
-        Write-Verbose ("Instruction bytecount added: " + ("{0:x2}" -f [int16]$instruction.count))
-        $instruction | %{$hexdata.Add($_)}
-        Write-Verbose ("Instruction Assembled: " + $instruction)
+        #count length of all cmd:data bytes in payload, add to message.
+        $HexStream.Add("{0:x2}" -f [int16](($io.hexstack | %{$_}) | %{"{0:x2}" -f $_}).Count)
+        Write-Verbose ("[HexStream]: Instruction bytecount appended")
+
+
+        ForEach ($HexByte in (($io.hexstack | %{$_}) | %{"{0:x2}" -f $_})) {
+            $HexStream.Add($HexByte)
+        }
+        Write-Verbose ("[HexStream]: (cmd:value) Instruction(s) appended")
 
         #compute/add CRC
         #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
-        $crc = (Get-CRC16 ($hexdata[1..($hexdata.count)] -Join "")) -replace '..', "$& " -split " "
-        Write-Verbose ("CRC caclulated: " + $crc)
-        #add First byte of CRC
-        $hexdata.Add($crc[0])
+        $CRC = (Get-CRC16 ($HexStream[1..($HexStream.count)] -Join "")) -replace '..', "$& " -split " "
+        Write-Verbose ("[HexStream]: CRC caclulated: " + $CRC)
         
-        #add second byte of CRC
-        $hexdata.Add($crc[1])
         
-        #add end transmission
-        $hexdata.Add($config.Message.Components.ETX.ToLower())  
-        Write-Verbose ("Footer assembled (ETX): " + $config.Message.Components.ETX.ToLower())
+        #add crc bytes
+        ForEach ($HexByte in $CRC[0..1]) {
+            $HexStream.Add($HexByte)
+        }
+        Write-Verbose ("[HexStream]: CRC Bytes appended")
 
-        Write-Verbose "Assembly complete"
+        #add end transmission
+        $HexStream.Add($config.Config.Message.Components.ETX.ToLower())  
+        Write-Verbose ("[HexStream]: Footer assembled (ETX)")
+
+        Write-Verbose "[HexStream]: Assembly complete"
         #return the message as a hash array
         #next better version of this should be to define a custom class for this.
-        $HexDataInspection = ((Convert-HexToByteArray -HexString ($hexdata -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-        $iO | Add-Member -Name "HexDataSend" -Type NoteProperty -Value (@{"RawStream"=$hexdata;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $hexdata)})
+        
+        $HexDataInspection = ((Convert-HexToByteArray -HexString ($HexStream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        $iO | Add-Member -Name "HexStreamSend" -Type NoteProperty -Value (@{"RawStream"=$HexStream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $HexStream)})
         return $iO
     }
 }
@@ -550,20 +594,17 @@ Param($iO)
         break
         }
 
-    }
-
-    process {
         #Define a watch dog object to use in serial communication timeouts.
         $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
         #convert the hex string to a byte array.
-        $SendBytes = Convert-HexToByteArray ($iO.HexDataSend.RawStream -join "")
+        $SendBytes = Convert-HexToByteArray ($iO.HexStreamSend.RawStream -join "")
         #load configuration metadata for comm session
         $config = Get-BMSConfigMeta
         #define array for return data stream
         
         #enumerate the configurable list from the metadata
         #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
-        $SerialConfigurables = $config.client.psobject.properties.name
+        $SerialConfigurables = $config.Config.Client.PSObject.Properties.Name
         #create a new serial port object.
         $Port = new-Object System.IO.Ports.SerialPort
 
@@ -576,6 +617,12 @@ Param($iO)
         catch {
             Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
         }
+
+    }
+
+    process {
+        
+        
         
         
         #start the timer for transmit event.
@@ -608,7 +655,7 @@ Param($iO)
         $WatchDog.Reset()
 
         #Wait a specified number of milliseconds. 250ms is the default configured in metadata.
-        Start-Sleep -m $config.Session.SessionThrottle
+        Start-Sleep -m $config.Config.Session.SessionThrottle
         
         #create a new pscustomobject array to store multiparts of stream
         $MultiPartObject = New-Object PSCustomObject
@@ -688,7 +735,7 @@ Param($iO)
                     #return the message as a hash array
                     #next better version of this should be to define a custom class for this.
                     $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-                    $iO | Add-Member -Name "HexDataReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+                    $iO | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
                     Verify-MessageCRC $iO | out-null
                     return $iO
                 }
@@ -739,17 +786,17 @@ Param($iO)
                 #return the message as a hash array
                 #next better version of this should be to define a custom class for this.
                 $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-                $io | Add-Member -Name "HexDataReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+                $io | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
                 Verify-MessageCRC $iO | out-null
                 return $iO
                 #this error is a failure and can cause dependent calls to fall on their face
                 #if (unlikely) any good data comes out, crc check will provide some validation
             }
-        } until ($WatchDog.ElapsedMilliseconds -ge $config.Session.SessionTimeout)
+        } until ($WatchDog.ElapsedMilliseconds -ge $config.Config.Session.SessionTimeout)
 
         #this exit condition is one where watchdog caught the hard timeout.
         #clean up the port and report our findings.
-        Write-Warning ("Serial timeout occured. Hard stop at " + $config.Session.SessionTimeout + " milliseconds")
+        Write-Warning ("Serial timeout occured. Hard stop at " + $config.Config.Session.SessionTimeout + " milliseconds")
         $port.Close()
         Write-Verbose ("Closed Port " + $port.PortName)
         $WatchDog.Stop()
@@ -760,7 +807,7 @@ Param($iO)
         #return the message as a hash array
         #next better version of this should be to define a custom class for this.
         $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-        $iO | Add-Member -Name "HexDataReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+        $iO | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
         Verify-MessageCRC $iO | out-null
         return $iO
         #this error is a failure and can cause dependent calls to fall on their face
@@ -927,6 +974,15 @@ Function Get-BMSCharFromHexStream{
     $MessageStream = ($HexString[4..$ComputablePayloadLength])
 
     ($MessageStream | ForEach-Object{[char][convert]::toint16($_,16)}) -join ""
+
+    #saving this example for later: [BitConverter]::ToSingle([BitConverter]::GetBytes(0xc71e596b),0)
+    #https://www.reddit.com/r/PowerShell/comments/bayfhx/hex_to_decimal/
+
+    #also this one
+    #$hexInput = 0x3FA8FE3B
+
+    #$bytes = ([Net.IPAddress]$hexInput).GetAddressBytes()
+    #$numericValue = [BitConverter]::ToSingle($bytes, 0)
 }
 
 
@@ -969,9 +1025,9 @@ Function Verify-MessageCRC {
     
     $i=0
         do {
-        $ComputablePayloadLength = ([convert]::toint16($iO.HexDataReceive.ParsedStream[$i][3],16) + 3)
-        $CRCTask = ($iO.HexDataReceive.ParsedStream[$i][1..$ComputablePayloadLength]) -join ""
-        $OldCRC = ($iO.HexDataReceive.ParsedStream[$i][($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
+        $ComputablePayloadLength = ([convert]::toint16($iO.HexStreamReceive.ParsedStream[$i][3],16) + 3)
+        $CRCTask = ($iO.HexStreamReceive.ParsedStream[$i][1..$ComputablePayloadLength]) -join ""
+        $OldCRC = ($iO.HexStreamReceive.ParsedStream[$i][($ComputablePayloadLength +1)..($ComputablePayloadLength +2)]) -join ""
         $NewCRC = (Get-CRC16 $CRCTask) -join ""
         Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Received CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
         
@@ -984,9 +1040,9 @@ Function Verify-MessageCRC {
             }
         $i++
     } 
-    while (($i + 1) -le $iO.HexDataReceive.ParsedStream.Count)
+    while (($i + 1) -le $iO.HexStreamReceive.ParsedStream.Count)
 
-    $iO.HexDataReceive.Add("CRCStream",$CRCStream)
+    $iO.HexStreamReceive.Add("CRCStream",$CRCStream)
     return $iO
     #compute/add CRC
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
