@@ -188,26 +188,6 @@ Function Get-BMSConfigMeta {
     gc .\config.json | ConvertFrom-Json
 }
 
-Function New-InstructionListMeta {
-    param([array]$List)
-    ForEach ($item in $List)
-    {
-        [BMSInstruction]::new($item,"?")
-    }
-}
-
-filter isFloat() {
-    return $_ -is [float] -or $_ -is [double] -or $_ -is [decimal]
-}
-
-filter isInt() {
-    return $_ -is [int]
-}
-
-filter isChar() {
-    return $_ -is [char] -or $_ -is [string]
-}
-
 Function Approve-BMSInstructionList {
     [CmdletBinding(DefaultParameterSetName='Command')]
     param (
