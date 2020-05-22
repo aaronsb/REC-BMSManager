@@ -2,7 +2,7 @@
     "Command": [
         {
             "Alias": "Identity",
-            "Instruction": "_IDN",
+            "Instruction": "*IDN",
             "Name": "Identification",
             "Description": "Answers REC BMS xxx where xxx is the type of BMS",
             "Common": true,
@@ -28,8 +28,8 @@
             "Value": "null",
             "Return": {
                 "Description": "Array of values",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "message length in bytes",
@@ -104,8 +104,8 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "byte count of message payload",
@@ -187,8 +187,8 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "number of BMS units",
@@ -200,7 +200,7 @@
                         {
                             "Description": "cell voltage",
                             "Unit": "voltage",
-                            "Value": "float",
+                            "Value": "double",
                             "Position": "template",
                             "Part": 1
                         }
@@ -221,8 +221,8 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values with variable value template",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "number of BMS units",
@@ -255,8 +255,8 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values with variable value template",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "number of BMS units",
@@ -289,8 +289,8 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values with variable value template",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "number of BMS units",
@@ -323,8 +323,8 @@
             "Value": null,
             "Return": {
                 "Description": "Variable array of values",
-                "Unit": "Array",
-                "Value": {
+                "Value": "Array",
+                "Unit": {
                     "Array": [
                         {
                             "Description": "data bytes to be sent",

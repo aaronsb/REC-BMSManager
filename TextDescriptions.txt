@@ -1,0 +1,28 @@
+Chemistry 3 (LiFePO4) n.a.
+Capacity 500 Ah
+Balance start voltage 3.45 V
+Balance end voltage 3.58 V
+Cell over-voltage switch-off per cell 3.85 V
+Over-voltage switch-off hysteresis per cell 0.25 V
+Cell end of charge voltage 3.58 V
+End of charge hysteresis per cell 0.25 V
+SOC end of charge hysteresis 5 %
+Cell-under voltage protection switch-off per cell 2.8 V
+Under voltage protection switch-off hysteresis per cell 0.1 V
+Cell under voltage discharge protection 2.9 V
+Battery pack under voltage protection switch-off timer 4 s
+Cells max difference 0.25 V
+BMS over-temperature switch-off 55 °C
+BMS over-temperature switch-off hysteresis 5 °C
+Cell over temperature switch-off 55 °C
+Cell over temperature switch-off hysteresis 2 °C
+Under temperature charging disable -10 °C
+Under temperature charging disable hysteresis 2 °C
+Voltage to current coefficient 0.0078125 A/bit
+Current measurement zero offset 0.0 A
+Maximum charging/discharging current per inverter device 70/120 A
+Number of inverter/charger devices 1 n.a.
+Charge coefficient 0.6 n.a.
+Discharge coefficient 1.5 n.a.
+CAN communication frequency 250 kbit/s
+SW version 2.5 n.a.
