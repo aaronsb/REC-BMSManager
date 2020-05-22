@@ -204,7 +204,7 @@ Function Approve-BMSInstructionList {
         #before the object is consumed by the serial stream processor function, it's cast internally into an ordered
         #dictionary since I need to keep track of which command was executed in which order for decoding purposes
 
-        switch ($Command.GetType().BaseType.Name) {
+        switch ($Command.GetType().Name) {
             "Hashtable" {
                 Write-Verbose "Case: Command Type Hashtable"
                 Write-Verbose ("Processing " + $Command.Keys.Count + " command(s)")
@@ -217,7 +217,7 @@ Function Approve-BMSInstructionList {
                 Write-Verbose ("Casting command string to single query")
                 $Command = @{$Command=""}
             }
-            "Array" {
+            "Object[]" {
                 Write-Verbose "Case: Command Type Array of Strings"
                 #give an option of just typing instructions in a comma delimited form in - this will be cast into a hashtable
                 #with the instruction set as a query only
@@ -232,11 +232,6 @@ Function Approve-BMSInstructionList {
                 Throw ("Command syntax error. :)")
             }
         }
-        #instance instruction library
-        $Library = (gc .\instructionset.json | ConvertFrom-Json).Command
-        
-        #instance the instructionObject as an ordered dictionary
-        $iO = New-Object PSCustomObject
         
         #instance an ordered array to contain packaged instruction(s)
         $InstructionStack = New-Object System.Collections.Generic.List[System.Object]
@@ -413,66 +408,72 @@ Function Approve-BMSInstructionList {
 
 
 
+
+
+
+# $iO = New-BMSSerializedInstructionObject -Instructions (Approve-BMSInstructionList -Command @{"LCD1"="?";"LCD3"="";"CELL"="?";"CHAR"=4.1})
+
+
 Function New-BMSMessage {
 [CmdletBinding()]
-Param($value)
-    DynamicParam {
- 
-        # Set the dynamic parameters' name
-        $ParameterName = 'Instruction'
-
-        # Create the dictionary
-        $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-
-        # Create the collection of attributes
-        $AttributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
-
-        # Create and set the parameters' attributes
-        $ParameterAttribute = New-Object System.Management.Automation.ParameterAttribute
-        $ParameterAttribute.Mandatory = $true
-        $ParameterAttribute.Position = 1
-
-        # Add the attributes to the attributes collection
-        $AttributeCollection.Add($ParameterAttribute)
-
-        # Generate and set the ValidateSet
-        $arrSet = (Get-BMSInstructionList).Instruction
-        $ValidateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($arrSet)
-
-        # Add the ValidateSet to the attributes collection
-        $AttributeCollection.Add($ValidateSetAttribute)
-
-        # Create and return the dynamic parameter
-        $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
-        $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
-        return $RuntimeParameterDictionary
-    }
-
+Param($Instructions)
+    
     begin {
-        $Instruction = $PSBoundParameters[$ParameterName]
+        #instance instruction library
+        $Library = (gc .\instructionset.json | ConvertFrom-Json).Command
+        $config = Get-BMSConfigMeta
+        #instance the instructionObject as an ordered dictionary
+        $iO = New-Object PSCustomObject
+        Function Private:InstructionObject {
+            Param($Instructions)
+            #initialize instruction count
+            $i = 0
+            #make a new container for everything
+            $iO = New-Object PSCustomObject
+            #initalize a stack array
+            $Stack = @()
+            #create an ordered array System.Collections.Specialized.OrderedDictionary,
+            ForEach ($key in $Instructions.Keys) {
+                $Stack += [ordered]@{$Key = ($Instructions.$Key)}
+                $i++
+            }
+            
+            #add the stack to the container
+            $iO | Add-Member -Name "Stack" -Type NoteProperty -Value $Stack
+        
+            #zzz todo the stream processor right below this comment will probably end up performing the
+            #conversion to hex values, since various values in commands need to be formatted in
+            #various ways like double precision float, flot, int, and char, as defined by dictionary
+            
+            #build a concated stream from the stack 
+            $Stream = (0..$i | %{($io.Stack[$_].Keys + $io.Stack[$_].Values)}) -join ""
+            
+            #add the concated stream to the container
+            $iO | Add-Member -Name "Stream" -Type NoteProperty -Value $Stream
+
+            $HexStream = $iO.Stream.ToCharArray() | %{"{0:x}" -f [int16]$_}
+            $iO | Add-Member -Name "HexInstructionStream" -Type NoteProperty -Value $HexStream
+            #return the container
+            return $iO
+        }
     }
 
     process {
         #load configuration metadata for use
-        $config = Get-BMSConfigMeta
+        
     
-        if (!$instruction)
+        if (!$Stack)
         {
             #if no instruction given, just barf out all of them. What could go wrong?
-            Get-BMSInstructionList
-            return
+            Throw "Need at least one instruction hash pair object"
         }
-        else {
-            #got an instruction name, try getting it
-            try {
-                $iO = New-BMSInstructionObject $instruction
-            }
-            catch {
-                Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors.")
-            }
+
+        if (!$Stack.GetType().Name -ne "Hashtable")
+        {
+            Throw "Stack object must be a hashtable. Preferably validated with Approve-BMSInstructionList first."
         }
-        Write-Verbose "Using Instruction:"
-        Write-Verbose ($iO | ft | out-string)
+
+        Write-Verbose ("Found" + $stack.count + "instructions to serialize.")
         #region enumerate instructions
         #assemble header
         #message is the entire message to be sent, including Start, End, checksums, etc.
