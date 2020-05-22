@@ -1,4 +1,36 @@
 {
+    "Config": [
+        {
+            "Battery": {
+                "CellCount": 14
+            },
+            "Client": {
+                "PortName": "COM6",
+                "BaudRate": 56000,
+                "Parity": "None",
+                "DataBits": 8,
+                "StopBits": "One",
+                "ReadTimeout": 750,
+                "WriteTimeout": 250
+            },
+            "Session": {
+                "SessionThrottle": 250,
+                "SessionTimeout": 5000
+            },
+            "Message": {
+                "Components": {
+                    "STX": "55",
+                    "DST": "01",
+                    "SND": "00",
+                    "LEN": "00",
+                    "MSG": null,
+                    "QRY": "3F",
+                    "CRC": "0000",
+                    "ETX": "AA"
+                }
+            }
+        }
+    ],
     "Command": [
         {
             "Alias": "Identity",
@@ -558,11 +590,11 @@
                 "Min": -20,
                 "Max": 65
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "Temperature",
             "Handler": "Range"
@@ -578,11 +610,11 @@
                 "Min": -30,
                 "Max": 65
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "Temperature",
             "Handler": "Range"
@@ -598,11 +630,11 @@
                 "Min": -20,
                 "Max": 65
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "Temperature",
             "Handler": "Range"
@@ -618,11 +650,11 @@
                 "Min": 1,
                 "Max": 30
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "temperature",
                 "Unit": "celcius",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "Temperature",
             "Handler": "Range"
@@ -638,11 +670,11 @@
                 "Min": -2,
                 "Max": 2
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "current in amps",
                 "Unit": "Amps",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "Amperage",
             "Handler": "Range"
@@ -718,11 +750,11 @@
                 "Min": 1,
                 "Max": 5
             },
-            "Value": "unsigned_char",
+            "Value": "char",
             "Return": {
                 "Description": "chemistry selection via lookup",
                 "Unit": "identity",
-                "Value": "unsigned_char"
+                "Value": "char"
             },
             "Category": "Pack",
             "Handler": "Range"
@@ -818,11 +850,11 @@
                 "Min": 1,
                 "Max": 6
             },
-            "Value": "unsigned_char",
+            "Value": "char",
             "Return": {
                 "Description": "default is 1",
                 "Unit": "count",
-                "Value": "unsigned_char"
+                "Value": "char"
             },
             "Category": "Victron",
             "Handler": "Range"
@@ -898,11 +930,11 @@
                 "Min": 1,
                 "Max": 2
             },
-            "Value": "unsigned_char",
+            "Value": "char",
             "Return": {
                 "Description": "1 is 250 kb/s 2 is 500 kb/s",
                 "Unit": "identity",
-                "Value": "unsigned_char"
+                "Value": "char"
             },
             "Category": "Victron",
             "Handler": "Range"
@@ -992,11 +1024,11 @@
                 "Min": -0.0003,
                 "Max": 0.0003
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "even cell calibration value in volts",
                 "Unit": "volts",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "BMS",
             "Handler": "Range"
@@ -1012,11 +1044,11 @@
                 "Min": -0.0003,
                 "Max": 0.0003
             },
-            "Value": "signed_float",
+            "Value": "float",
             "Return": {
                 "Description": "odd cell calibration value in volts",
                 "Unit": "volts",
-                "Value": "signed_float"
+                "Value": "float"
             },
             "Category": "BMS",
             "Handler": "Range"
