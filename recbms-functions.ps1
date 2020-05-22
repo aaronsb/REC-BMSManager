@@ -1,16 +1,27 @@
 
-Class Message {
-    [String]$Name
-    [String]$Description
-    [String]$Type
-    [String]$Owner
- 
-    [int]$Reboots
- 
-    [void]Reboot(){
-          $this.Reboots ++
+
+Class BMSInstruction
+{
+    [String]$Instruction
+    [String]$Data
+    BMSInstruction ([string]$instruction,[string]$Data) {
+        $this.Instruction = $Instruction
+        $this.Data = $Data
     }
 }
+
+filter isFloat() {
+    return $_ -is [float] -or $_ -is [double] -or $_ -is [decimal]
+}
+
+filter isInt() {
+    return $_ -is [int]
+}
+
+filter isChar() {
+    return $_ -is [char] -or $_ -is [string]
+}
+
 
 
 #REQUIRES -Version 3.0
@@ -148,21 +159,21 @@ Function Get-BMSInstructionList {
 
     process {
         $object = gc .\instructionset.json | ConvertFrom-Json
-        $selection = $object.Command | Select-Object -Property Instruction,Name,Category,Handler
+        $selection = $object.Command | Select-Object -Property Alias,Instruction,Category,Handler
         if ($Common) {
             Write-Verbose ("Selected common instructions") 
                 Write-Verbose "Can't use Category or Handler filters with Common switch."
-                $selection = $object.Command | ?{$_.Common -eq $true} | Select-Object -Property Instruction,Name,Category,Handler
+                $selection = $object.Command | ?{$_.Common -eq $true} | Select-Object -Property Alias,Instruction,Category,Handler
         }
         else {
             if ($Category) {
                 Write-Verbose ("Selected " + $Category + " category type") 
-                $selection = $object.Command | ?{$_.Category -match $Category} | Select-Object -Property Instruction,Name,Category,Handler
+                $selection = $object.Command | ?{$_.Category -match $Category} | Select-Object -Property Alias,Instruction,Category,Handler
             }
             if ($Handler)
             {
                 Write-Verbose ("Selected " + $Handler + " type handler")
-                $selection = $object.Command | ?{$_.Handler -match $Handler} | Select-Object -Property Instruction,Name,Category,Handler
+                $selection = $object.Command | ?{$_.Handler -match $Handler} | Select-Object -Property Alias,Instruction,Category,Handler
             }
         }
     return $selection
@@ -171,31 +182,252 @@ Function Get-BMSInstructionList {
 }
 
 
+
+
 Function Get-BMSConfigMeta {
     gc .\config.json | ConvertFrom-Json
 }
 
-Function New-BMSInstruction {
-    [CmdletBinding()]
-    Param($Instruction)
+Function New-InstructionListMeta {
+    param([array]$List)
+    ForEach ($item in $List)
+    {
+        [BMSInstruction]::new($item,"?")
+    }
+}
 
-    process {
-        #instance instruction library
-        $object = gc .\instructionset.json | ConvertFrom-Json
-        #save the instruction object as equaling the autocompleted instruction. 
-        $instructionObject = $object.Command | ?{$_.Instruction -eq $instruction}
-        #small fix for butthole character *, causes problems :)
-        if ($instructionObject.Instruction -eq "_IDN")
-        {$instructionObject.Instruction = "*IDN"}
-        #return the selected instruction as an object from library
-        if (!$InstructionObject)
-        {
-            throw "Named instruction not found. Check JSON library for errors."
+filter isFloat() {
+    return $_ -is [float] -or $_ -is [double] -or $_ -is [decimal]
+}
+
+filter isInt() {
+    return $_ -is [int]
+}
+
+filter isChar() {
+    return $_ -is [char] -or $_ -is [string]
+}
+
+Function Approve-BMSInstructionList {
+    [CmdletBinding(DefaultParameterSetName='Command')]
+    param (
+        [Parameter(ValueFromPipeline)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Command')]$Command
+    )
+
+    begin {
+        #begin region
+        #check to see if input object is of one of the required types
+        #I'm conflicted between requiring an ordered dictionary hashtable and just a regular old hashtable
+        #I think it makes sense from a "less complexity" perspective to use a hashtable since a multi-instruction
+        #sentence doesn't really matter the order in which it's sent to the BMS controller
+        #before the object is consumed by the serial stream processor function, it's cast internally into an ordered
+        #dictionary since I need to keep track of which command was executed in which order for decoding purposes
+
+        switch ($Command.GetType().BaseType.Name) {
+            "Hashtable" {
+                Write-Verbose "Case: Command Type Hashtable"
+                Write-Verbose ("Processing " + $Command.Keys.Count + " command(s)")
+                Write-Verbose ("Commands to execute: " + $Command.Keys)
+            }
+            "String" {
+                Write-Verbose "Case: Command Type String"
+                #give an option of just typing an instruction in - this will be cast into a single hashtable
+                #with the instruction set as a query only
+                Write-Verbose ("Casting command string to single query")
+                $Command = @{$Command=""}
+            }
+            "Array" {
+                Write-Verbose "Case: Command Type Array of Strings"
+                #give an option of just typing instructions in a comma delimited form in - this will be cast into a hashtable
+                #with the instruction set as a query only
+                $CommandList = @{}
+                forEach ($item in $Command) {
+                    $CommandList.Add($item.ToString(),"?")
+                }
+                $Command = $CommandList
+            }
+            Default {
+                #maaaybe make this more helpful
+                Throw ("Command syntax error. :)")
+            }
         }
-        else {
-            return $instructionObject
+        #instance instruction library
+        $Library = (gc .\instructionset.json | ConvertFrom-Json).Command
+        
+        #instance the instructionObject as an ordered dictionary
+        $iO = New-Object PSCustomObject
+        
+        #instance an ordered array to contain packaged instruction(s)
+        $InstructionStack = New-Object System.Collections.Generic.List[System.Object]
+
+        #define a private validation function
+
+        Function MinMaxValidate{
+            param($instructionValue, $Book)
+            if ([double]$Command.$Key -ge [double]$Book.Range.Min) {
+                if ([double]$Command.$Key -le [double]$Book.Range.Max) {
+                    Write-Verbose ("[" + $Command.$Key + " <= " + $Book.Range.Max + "]: RangeMax Accepted")
+                    $thisMinMax.Max = $true
+                }
+                else {
+                    $thisMinMax.Max = $false
+                    Write-Verbose ("[" + $Command.$Key + " !<= " + $Book.Range.Max + "]: RangeMax NOT Accepted")
+                }
+                Write-Verbose ("[" + $Command.$Key + " >= " + $Book.Range.Min + "]: RangeMin Accepted")
+                $thisMinMax.Min = $true
+            }
+            else {
+                $thisMinMax.Min = $false
+                Write-Verbose ("[" + $Command.$Key + " !>= " + $Book.Range.Min + "]: RangeMin NOT Accepted")
+            }
+            Write-Verbose ("[" + $Book.Return.Value + "]: Instruction type validated")
+            return $thisMinMax
+        }
+
+        Function private:ValidateInstructionStack{
+            param($Command)
+            $CommandCopy = @{}
+            foreach ($Key in $Command.Keys)
+            {
+                Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction Validation")
+                #get instruction book from library
+                $Book = $null
+                
+                $Book = ($Library | ?{$_.Instruction -eq $Key.ToUpper()})
+                if (!$Book) {
+                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
+                    #throw the book?
+                    Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
+                }
+                else {
+                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Known")
+                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: " + $Book.Name)
+
+                    #region valdating command/query
+                    if (($Command.$Key.Length -eq "0") -or ($Command.$Key -eq "?")) {
+                        #if data is empty or query, turn it into a query or assert as a query
+                        Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Null Instruction Data: Asserting to Query")
+                        $CommandCopy.Add(($Key),"?")
+                    }
+                    else {
+                        Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Validating Instruction DataType")
+                        #validation code using the a page from the book aka return object parameters
+                        #don't want to turn up the BMS to 11 accidently. is there a knob that goes that high?
+                        if (($Book.ReadOnly -eq $true) -and ($Command.$Key -ne "?")) {
+                            #respect readonly instruction flag definition. Discard any instruction data that is included.
+                            #in a more strict implementation, this instruction should probably just be discarded.
+                            Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Expected Query with ReadOnly Instruction")
+                            Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Disallowed Instruction Data: Setting to Query")
+                            $CommandCopy.Add(($Key),"?")
+                        }
+                        else {
+                            #region verify instruction is of the correct value type (float, int, signed_float, etc)
+                            #verify instruction is within the range of correct value for type.
+
+                            #initialize flag object to tag verification
+                            $thisMinMax = @{"Min"=$false;"Max"=$false}
+                            $thisTypeValid = $false
+                            switch ($Book.Return.Value) {
+                                "float" {
+                                    if ($Command.$Key -as [float]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is float")
+                                        $thisTypeValid = $true
+                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT float")
+                                    }
+                                }
+                                "int" {
+                                    if ($Command.$Key -as [int]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is int")
+                                        $thisTypeValid = $true
+                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT int")
+                                    }
+                                }
+                                "null" {
+                                    if ($Command.$Key -as [char]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is char")
+                                        $thisTypeValid = $true
+                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT char")
+                                    }
+                                }
+                                "array" {
+                                    if ($Command.$Key -as [char]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is char")
+                                        $thisTypeValid = $true
+                                        #array types are always read only, so min and max don't actually do anything. set to true.
+                                        $thisMinMax.Max = $true
+                                        $thisMinMax.Min = $true
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT char")
+                                    }
+                                }
+                                "signed_float" {
+                                    if ($Command.$Key -as [float]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is signed_float")
+                                        $thisTypeValid = $true
+                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT signed_float")
+                                    }
+                                }
+                                "unsigned_char" {
+                                    if ($Command.$Key -as [char]) {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is unsigned_char")
+                                        $thisTypeValid = $true
+                                        $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
+                                    }
+                                    else {
+                                        Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT unsigned_char")
+                                    }
+                                }
+                                Default {
+                                    Write-Verbose ("[" + $Book.Return.Value + "]: No handler for this value type")
+                                    Write-Error ("[" + $Book.Return.Value + "]: No handler for this value type. Verify Dictionary data.")
+                                    $thisTypeValid = $false
+                                    $thisMinMax.Max = $false
+                                    $thisMinMax.Min = $false
+                                }
+                            }
+                            if (($thisMinMax.Max -eq $true) -and ($thisMinMax.Min -eq $true) -and ($thisTypeValid -eq $true)) {
+                                Write-Verbose ("[" + $Key + "]: Added to validated instruction stack")
+                                $CommandCopy.Add(($Key),($Command.$Key))
+                            }
+                            else {
+                                Write-Verbose ("[" + $Key + "]: NOT Added to validated instruction stack")
+                            }
+                            
+                        }
+    
+                    }
+                }
+            }
+            $CommandCopy
         }
     }
+    #end of begin region
+
+    #process region
+    process {
+        $InstructionStack = private:ValidateInstructionStack $Command
+    }
+    #end of process region
+
+    #begin of end region
+    end {
+        return $InstructionStack
+    }
+    #end of end region. The End.
 }
 
 
@@ -253,7 +485,7 @@ Param($value)
         else {
             #got an instruction name, try getting it
             try {
-                $iO = New-BMSInstruction $instruction
+                $iO = New-BMSInstructionObject $instruction
             }
             catch {
                 Throw ("Instruction " + $instruction + " is invalid. Check JSON library for errors.")
