@@ -15,7 +15,8 @@
             },
             "Session": {
                 "SessionThrottle": 250,
-                "SessionTimeout": 5000
+                "SessionTimeout": 5000,
+                "MaxMessages": 1
             },
             "Message": {
                 "Components": {
