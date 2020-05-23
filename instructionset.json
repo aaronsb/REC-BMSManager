@@ -16,7 +16,7 @@
             "Session": {
                 "SessionThrottle": 250,
                 "SessionTimeout": 5000,
-                "MaxMessages": 1
+                "MaxMessagesPer": 2
             },
             "Message": {
                 "Components": {
