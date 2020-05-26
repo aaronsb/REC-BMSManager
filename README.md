@@ -38,4 +38,4 @@ O:(array of instruction strings|array of instruction:value pairs) -->
 
 
 
-![progress so far](https://raw.githubusercontent.com/aaronsb/ps-recbms/master/recbms.gif)
+![progress so far](https://raw.githubusercontent.com/aaronsb/ps-recbms/master/images/recbms.gif)
