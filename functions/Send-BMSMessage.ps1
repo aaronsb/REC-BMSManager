@@ -1,4 +1,4 @@
-Function Invoke-BMSCommunication {
+Function Send-BMSMessage {
     [cmdletbinding()]
     Param($iO)
         begin {

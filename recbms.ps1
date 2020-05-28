@@ -1,16 +1,21 @@
 #manifest
-. .\Get-BMSInstructionlist.ps1
-. .\Get-CRC16.ps1
-. .\HexConverters.ps1
-. .\Invoke-BMSCommunication.ps1
-. .\Invoke-CMDProcessor.ps1
-. .\New-BMSMessage.ps1
-. .\New-BMSSessionObject.ps1
-. .\Sort-MessageStream.ps1
+. .\functions\Assert-BMSMessage.ps1
+. .\functions\Build-BMSMessage.ps1
+. .\functions\Send-BMSMessage.ps1
+. .\functions\Get-BMSInstructionlist.ps1
+. .\functions\Get-CRC16.ps1
+. .\functions\HexConverters.ps1
+. .\functions\Invoke-CMDPreProcessor.ps1
+. .\functions\Sort-MessageStream.ps1
 
-Function Get-BMSConfigMeta {
+
+Function Get-BMSLibraryInstance {
     (gc .\instructionset.json | ConvertFrom-Json)
+
 }
+
+#instance a library global
+$global:BMSInstructionSet = Get-BMSLibraryInstance
 
 Function Invoke-BMSConversation
 {[CmdletBinding()]
@@ -225,10 +230,3 @@ Function Verify-MessageCRC {
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
 }
 
-Function Get-BMSStatus
-{param()
-    ForEach ($instruction in ((Get-BMSInstructionList -Common).Instruction))
-    {
-        Get-BMSParameter $instruction -NoFormatList
-    }
-}
