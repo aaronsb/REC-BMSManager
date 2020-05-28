@@ -20,20 +20,11 @@ Findings and Notes
 *REC-BMS 1Q is based on an Amtel AVR32 90CAN32 microcontroller
 *Binary value floats (single precision, 32 bit) are little endian and need to be processed accordingly.
 
-O: Object
-F: Function
 
 List of public function conversation flow:
 
 
-O:(array of instruction strings|array of instruction:value pairs) -->
-    F:Approve-BMSInstructionList -->
-        F:New-BMSSessionObject -> F:New-BMSMessage -->
-            O:InstructionObject -->
-                <-- F:Invoke-BMSConversation
-            O:InstructionObject -->
-                F:Decode-BMSiO -->
-            O:User
+Assert -> Build -> Send -> Parse -> Decode -> Present
 
 
 
