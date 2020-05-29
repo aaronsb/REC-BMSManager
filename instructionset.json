@@ -5,12 +5,12 @@
                 "CellCount": 14
             },
             "Client": {
-                "PortName": "COM6",
-                "BaudRate": 56000,
+                "PortName": "/dev/ttyUSB0",
+                "BaudRate": 38400,
                 "Parity": "None",
                 "DataBits": 8,
                 "StopBits": "One",
-                "ReadTimeout": 750,
+                "ReadTimeout": 250,
                 "WriteTimeout": 250
             },
             "Session": {
@@ -66,7 +66,7 @@
                         {
                             "Description": "message length in bytes",
                             "Unit": "count",
-                            "Value": "int",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
@@ -142,7 +142,7 @@
                         {
                             "Description": "byte count of message payload",
                             "Unit": "count",
-                            "Value": "int",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
@@ -225,7 +225,7 @@
                         {
                             "Description": "number of BMS units",
                             "Unit": "count",
-                            "Value": "int",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
@@ -259,7 +259,7 @@
                         {
                             "Description": "number of BMS units",
                             "Unit": "count",
-                            "Value": "int",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
@@ -293,7 +293,7 @@
                         {
                             "Description": "number of BMS units",
                             "Unit": "count",
-                            "Value": "int",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
@@ -327,7 +327,7 @@
                         {
                             "Description": "number of BMS units",
                             "Unit": "count",
-                            "Value": "int",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
@@ -361,7 +361,7 @@
                         {
                             "Description": "data bytes to be sent",
                             "Unit": "count",
-                            "Value": "byte",
+                            "Value": "string",
                             "Position": 0,
                             "Part": 0
                         },
