@@ -14,8 +14,9 @@
                 "WriteTimeout": 250
             },
             "Session": {
-                "SessionThrottle": 250,
-                "SessionTimeout": 5000
+                "SessionThrottle": 500,
+                "SessionTimeout": 1000,
+                "Retries": 4
             },
             "Message": {
                 "Components": {
@@ -27,7 +28,8 @@
                     "QRY": "3F",
                     "CRC": "0000",
                     "ETX": "AA"
-                }
+                },
+                "FloatPrecision": "single"
             }
         }
     ],
@@ -65,7 +67,7 @@
                     "Array": [
                         {
                             "Description": "message length in bytes",
-                            "Unit": "count",
+                            "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -136,12 +138,12 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values",
-                "Value": "Array",
+                "Value": "IntArray",
                 "Unit": {
                     "Array": [
                         {
                             "Description": "byte count of message payload",
-                            "Unit": "count",
+                            "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -149,56 +151,56 @@
                         {
                             "Description": "min cell BMS address",
                             "Unit": "identity_bms",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 1,
                             "Part": 1
                         },
                         {
                             "Description": "min cell number",
                             "Unit": "identity_cell",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 2,
                             "Part": 1
                         },
                         {
                             "Description": "max cell BMS address",
                             "Unit": "identity_bms",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 3,
                             "Part": 1
                         },
                         {
                             "Description": "max cell number",
                             "Unit": "identity_cell",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 4,
                             "Part": 1
                         },
                         {
                             "Description": "max temperature sense BMS address",
                             "Unit": "identity_bms",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 5,
                             "Part": 1
                         },
                         {
                             "Description": "max temperature sense number",
                             "Unit": "identity_cell",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 6,
                             "Part": 1
                         },
                         {
                             "Description": "Ah MSB",
                             "Unit": "AmpHour",
-                            "Value": "int",
+                            "Value": "byte",
                             "Position": 7,
                             "Part": 1
                         },
                         {
                             "Description": "Ah LSB",
                             "Unit": "AmpHour",
-                            "Value": "int",
+                            "Value": "byte",
                             "Position": 8,
                             "Part": 1
                         }
@@ -224,7 +226,7 @@
                     "Array": [
                         {
                             "Description": "number of BMS units",
-                            "Unit": "count",
+                            "Unit": "UnitCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -258,7 +260,7 @@
                     "Array": [
                         {
                             "Description": "number of BMS units",
-                            "Unit": "count",
+                            "Unit": "UnitCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -292,7 +294,7 @@
                     "Array": [
                         {
                             "Description": "number of BMS units",
-                            "Unit": "count",
+                            "Unit": "UnitCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -325,8 +327,8 @@
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "number of BMS units",
-                            "Unit": "count",
+                            "Description": "Count of bytes",
+                            "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -355,12 +357,12 @@
             "Value": null,
             "Return": {
                 "Description": "Variable array of values",
-                "Value": "Array",
+                "Value": "IntArray",
                 "Unit": {
                     "Array": [
                         {
                             "Description": "data bytes to be sent",
-                            "Unit": "count",
+                            "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
@@ -368,28 +370,28 @@
                         {
                             "Description": "0 – no error, 1 – error",
                             "Unit": "boolean",
-                            "Value": "binary",
+                            "Value": "char",
                             "Position": 1,
                             "Part": 1
                         },
                         {
                             "Description": "BMS unit",
                             "Unit": "identity_bms",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 2,
                             "Part": 1
                         },
                         {
                             "Description": "error number (1-16)",
                             "Unit": "identity",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 3,
                             "Part": 1
                         },
                         {
                             "Description": "number of the cell, temperature sensor where the error occured",
                             "Unit": "identity",
-                            "Value": "int",
+                            "Value": "char",
                             "Position": 4,
                             "Part": 1
                         }
