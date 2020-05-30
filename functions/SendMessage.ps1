@@ -167,7 +167,6 @@ Function Send-BMSMessage {
                         Verify-MessageCRC $iO | out-null
                         return $iO
                     }
-                    write-warning $port.IsOpen
                     #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
                     #with the serial port setup.
                     if (!$port.IsOpen) {
