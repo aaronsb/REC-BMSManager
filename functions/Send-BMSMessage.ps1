@@ -4,35 +4,78 @@ Function Send-BMSMessage {
         begin {
             #trap all errors.
             trap {
-            Write-Error "Something died! Closing COM port."
+            Write-Error $error[0]
             $port.Close()
             break
             }
-    
+
+            function Open-SerialPort {
+                $r = 0
+                do {
+                    #open the port this session
+                    try {
+                        $port.Open()
+                        if ($port.IsOpen) {
+                            Write-Verbose ("Waited [$r] tries to open serial port")
+                            break
+                        }
+                        
+                    }
+                    catch
+                    {
+                        write-warning "Couldn't open port, Retrying: $r"
+                        $r++
+                    }
+                    Start-Sleep -Milliseconds $BMSInstructionSet.Config.Session.SessionTimeout
+                } until ($r -gt $BMSInstructionSet.Config.Session.Retries)
+                
+                if (!$port.IsOpen) {
+                    Throw "Couldn't open serial port. Retried $r times."
+                }
+            }
+
+            Function Send-SerialBytes {
+                param($SendBytes)
+                try {
+               
+                    #clear existing buffer, just in case something is sending on the line
+                    #this could probably be built more robust, but for now it's at least an acknowledgement that the line should be clear.
+                    $port.ReadExisting() | Out-Null
+                    
+                    #Write the message on the line. Bon Voyage!
+                    Write-Verbose ("Sending " + $SendBytes.count + " bytes on " + $port.PortName)
+                    $port.Write([byte[]] $SendBytes, 0, ($SendBytes.count))
+                    Write-Verbose "Sucessful TX of instruction"
+                }
+                catch {
+                    #catch the rest of the errors related to opening serial ports.
+                    Throw "Couldn't send bytes on serial port"
+                    break
+                }
+            }
             #Define a watch dog object to use in serial communication timeouts.
             $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
             #convert the hex string to a byte array.
             $SendBytes = Convert-HexToByteArray ($iO.HexStreamSend.RawStream -join "")
-            #load configuration metadata for comm session
-            $config = Get-BMSConfigMeta
+
             #define array for return data stream
             
             #enumerate the configurable list from the metadata
             #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
-            $SerialConfigurables = $config.Config.Client.PSObject.Properties.Name
+            $SerialConfigurables = $BMSInstructionSet.Config.Client.PSObject.Properties.Name
             #create a new serial port object.
-            $Port = new-Object System.IO.Ports.SerialPort
+            $global:Port = new-Object System.IO.Ports.SerialPort
     
             #set properties in the serial port.
             try {
-                ForEach ($item in $SerialConfigurables) {
-                    $port.$item = $config.Config.Client.$item
+                    ForEach ($item in $SerialConfigurables) {
+                    $port.$item = $BMSInstructionSet.Config.Client.$item
+                    Write-Verbose ("[Serial]: " + $item + " : " + $port.$item)
+                    }
                 }
-            }
-            catch {
-                Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
-            }
-    
+                catch {
+                    Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
+                }
         }
     
         process {
@@ -40,37 +83,21 @@ Function Send-BMSMessage {
             
             
             
+            Open-SerialPort
+
             #start the timer for transmit event.
             $WatchDog.Start()
-            #open the port this session
-            $port.Open()
-    
-            try {
-               
-                #clear existing buffer, just in case something is sending on the line
-                #this could probably be built more robust, but for now it's at least an acknowledgement that the line should be clear.
-                $port.ReadExisting() | Out-Null
-                
-                #Write the message on the line. Bon Voyage!
-                Write-Verbose ("Sending " + $SendBytes.count + " bytes on " + $port.PortName)
-                $port.Write([byte[]] $SendBytes, 0, ($SendBytes.count))
-                Write-Verbose "Sucessful TX of instruction"
-            }
-            catch {
-                #catch the rest of the errors related to opening serial ports.
-                $Error[0]
-                $port.Close()
-                break
-            }
-            #port stays open
+
+            #port should stay open for immediate receieve
+            Send-SerialBytes $SendBytes
             #stop the timer for transmit event.
             $WatchDog.Stop()
             Write-Verbose ("Serial TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
             #reset the timer for the next event.
             $WatchDog.Reset()
     
-            #Wait a specified number of milliseconds. 250ms is the default configured in metadata.
-            Start-Sleep -m $config.Config.Session.SessionThrottle
+            #Wait a specified number of milliseconds. 
+            Start-Sleep -m $BMSInstructionSet.Config.Session.SessionThrottle
             
             #create a new pscustomobject array to store multiparts of stream
             $MultiPartObject = New-Object PSCustomObject
@@ -78,7 +105,7 @@ Function Send-BMSMessage {
             #Number of expected message parts to be returned.
             #Usually arrays are 2 parts, informational then the data.
             #everything else is 1 part
-            $PartCount = $iO.HexStreamSend.HandlerEventCount
+
     
             #initalize byte index
             $i = 0
@@ -104,7 +131,7 @@ Function Send-BMSMessage {
             #initialize empty array to store all bytes
             $Stream = New-Object System.Collections.Generic.List[System.Object]
     
-            Write-Verbose ("Expecting " + $PartCount + " parts in bytestream")
+            Write-Verbose ("Expecting " + $iO.HandlerCount + " parts in bytestream")
     
     
             #start the timer for the receieve event.
@@ -122,7 +149,7 @@ Function Send-BMSMessage {
                     #bail from loop before the next ReadByte() so we don't incur a buffer exception.
     
     
-                    if ($IndexMessagePart -gt $PartCount)
+                    if ($IndexMessagePart -gt $iO.HandlerCount)
                     {
                         Write-Verbose ("Reached expected message part count defined for this instruction.")
                         $port.Close()
@@ -140,9 +167,20 @@ Function Send-BMSMessage {
                         Verify-MessageCRC $iO | out-null
                         return $iO
                     }
-    
+                    write-warning $port.IsOpen
                     #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
                     #with the serial port setup.
+                    if (!$port.IsOpen) {
+                        Write-Warning "The serial port is unexpectedly closed"
+                        try {
+                            Write-Warning "Turning the port off and on again (TM)"
+                            $port.Close()
+                            Open-SerialPort
+                        }
+                        catch {
+                            throw "The serial port was unexpectedly closed"
+                        }
+                    }
                     $Data = "{0:x2}" -f $port.ReadByte()
                     #add retrieved byte to stream array
                     $Stream.Add($Data)
@@ -188,16 +226,18 @@ Function Send-BMSMessage {
                     #next better version of this should be to define a custom class for this.
                     $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
                     $io | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
+                    
+                    #verify crc of messsage parts. Error is asserted if crc mismatch found, but object is still returned (for diagnostics? I guess...)
                     Verify-MessageCRC $iO | out-null
                     return $iO
                     #this error is a failure and can cause dependent calls to fall on their face
                     #if (unlikely) any good data comes out, crc check will provide some validation
                 }
-            } until ($WatchDog.ElapsedMilliseconds -ge $config.Config.Session.SessionTimeout)
+            } until ($WatchDog.ElapsedMilliseconds -ge $BMSInstructionSet.Config.Session.SessionTimeout)
     
             #this exit condition is one where watchdog caught the hard timeout.
             #clean up the port and report our findings.
-            Write-Warning ("Serial timeout occured. Hard stop at " + $config.Config.Session.SessionTimeout + " milliseconds")
+            Write-Warning ("Serial timeout occured. Hard stop at " + $BMSInstructionSet.Config.Session.SessionTimeout + " milliseconds")
             $port.Close()
             Write-Verbose ("Closed Port " + $port.PortName)
             $WatchDog.Stop()
@@ -213,6 +253,10 @@ Function Send-BMSMessage {
             return $iO
             #this error is a failure and can cause dependent calls to fall on their face
             #if (unlikely) any good data comes out, crc check will provide some validation
+        }
+
+        end {
+            $port.Close()
         }
         
     }

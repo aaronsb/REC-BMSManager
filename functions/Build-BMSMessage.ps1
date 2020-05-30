@@ -13,32 +13,35 @@ Function Add-HexStreamEncapsulation {
         $HexStream.Add($BMSInstructionSet.Config.Message.Components.STX.ToLower())
         $HexStream.Add($BMSInstructionSet.Config.Message.Components.DST.ToLower())
         $HexStream.Add($BMSInstructionSet.Config.Message.Components.SND.ToLower())
-        Write-Verbose ("[HexStream]: Header (STX)(DST)(SND) appended")
-        
-        #add payload bytes to hexstream from instruction object row
-        $Row.Hex | %{$HexStream.Add($_)}
+        Write-Verbose ("[HexStream]:" + ($HexStream -join "") + " Header (STX)(DST)(SND) appended")
 
         #count length of all cmd:data bytes in payload, add to message.
-        $HexStream.Add("{0:x2}" -f [int16]($Row.Hex.Count))
-        Write-Verbose ("[HexStream]: Instruction bytecount appended")
+        $ByteCount = "{0:x2}" -f [int16]($Row.Hex.Count)
+        $HexStream.Add($ByteCount)
+        Write-Verbose ("[HexStream]:" + ($ByteCount -join "") + " Instruction byte count appended")
+
+        #add payload bytes to hexstream from instruction object row
+        $Row.Hex | %{$HexStream.Add($_)}
+        Write-Verbose ("[HexStream]:" + ($Row.Hex -join "") + " Instructions appended")
 
         #compute/add CRC
         #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
         $CRC = (Get-CRC16 ($HexStream[1..($HexStream.count)] -Join "")) -replace '..', "$& " -split " "
-        Write-Verbose ("[HexStream]: CRC caclulated: " + $CRC)
+        
         
         #add crc bytes
         ForEach ($HexByte in $CRC[0..1]) {
             $HexStream.Add($HexByte)
-            Write-Verbose ("[HexStream]: CRC Bytes appended")
+            
         }
+        Write-Verbose ("[HexStream]:" + $CRC + "Bytes appended")
         #add end transmission
 
         $HexStream.Add($BMSInstructionSet.Config.Message.Components.ETX.ToLower())  
-        Write-Verbose ("[HexStream]: Footer assembled (ETX)")
+        Write-Verbose ("[HexStream]:" + (($BMSInstructionSet.Config.Message.Components.ETX.ToLower() -join "")) + " Footer assembled (ETX)")
 
         Write-Verbose ("[HexStream]: Assembly complete")
-        $HexDataInspection = ((Convert-HexToByteArray -HexString ($HexStream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
+        $HexDataInspection = $HexStream | %{[convert]::ToByte($_,16)} | Format-Hex
         $HexStreamSend = (@{
             "HandlerEventCount"=($Row.HandlerEventCount);
             "RawStream"=$HexStream;

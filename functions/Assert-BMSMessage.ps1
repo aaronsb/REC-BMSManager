@@ -42,8 +42,7 @@ Function Assert-BMSMessage {
         Function ValidateInstructionStack {
             param($Command)
             $CommandCopy = @()
-            foreach ($Key in $Command.Keys)
-            {
+            foreach ($Key in $Command.Keys) {
                 #get instruction book from library
                 $Book = $null
                 #clear the previous hex encoding
@@ -65,25 +64,31 @@ Function Assert-BMSMessage {
                 Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Known")
                 Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: " + $Book.Name)
                 
-                if ($Book.Return.Value -ne "Array") {
-                    $HandlerCount = $HandlerCount + $Book.Return.Unit.Count
+                switch ($Book.Return.Value) {
+                    Array {
+                        $HandlerCount = $HandlerCount + ($Book.Return.Unit.Array.Part | Sort-Object -Unique).Count
+                    }
+                    IntArray {
+                        $HandlerCount = $HandlerCount + ($Book.Return.Unit.Array.Part | Sort-Object -Unique).Count
+                    }
+                    Default {
+                        $HandlerCount = $HandlerCount + $Book.Return.Unit.Count
+                    }
                 }
-                else {
-                    $HandlerCount = $HandlerCount + ($Book.Return.Unit.Array.Part | Sort-Object -Unique).Count
-                }
-
+                
                 #region valdating command/query
                 if (($Command.$Key.Length -eq "0") -or ($Command.$Key -eq "?")) {
                     #if data is empty or query, turn it into a query or assert as a query
                     Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Null Instruction Data: Asserting to Query")
                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
-                    $Key.ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                     [char]"?" | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                     $CommandCopy += ,[pscustomobject]@{
                         "Hex"=$HexEncodedInstruction;
                         "Plain"=$Command.$Key;
                         "Command"=$Key.ToUpper();
-                        "HandlerCount"=$HandlerCount
+                        "HandlerCount"=$HandlerCount;
+                        "Instruction"=$Book
                     }
                 }
                 else {
@@ -97,7 +102,7 @@ Function Assert-BMSMessage {
                         Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Disallowed Instruction Data: Setting to Query")
                         $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                         $CommandCopy += ,[pscustomobject]@{"Hex"=$HexEncodedInstruction;"Plain"=$Command.$Key;"Command"=$Key.ToUpper()}
-                        $Key.ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                        $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                         [char]"?" | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                     }
                     else {
@@ -114,7 +119,7 @@ Function Assert-BMSMessage {
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    $Key.ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     [System.BitConverter]::GetBytes([float]$Command.$Key) | %{"{0:x2}" -f $_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
@@ -129,7 +134,7 @@ Function Assert-BMSMessage {
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
                                     #if a value is actually stored as a float, it will be rounded to nearest int
                                     #but display as int in the non encoded key value
-                                    $Key.ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     [int]$Command.$Key | %{"{0:x2}" -f [int16]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
@@ -146,7 +151,7 @@ Function Assert-BMSMessage {
                                     #set encoded instruction to query always
                                     $thisMinMax.Max = $true
                                     $thisMinMax.Min = $true
-                                    $Key.ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     [char]"?" | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
@@ -159,7 +164,7 @@ Function Assert-BMSMessage {
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    $Key.ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     [char]$Command.$Key | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
@@ -180,7 +185,8 @@ Function Assert-BMSMessage {
                                     "Hex"=$HexEncodedInstruction;
                                     "Plain"=$Command.$Key;
                                     "Command"=$Key.ToUpper();
-                                    "HandlerCount"=$HandlerCount
+                                    "HandlerCount"=$HandlerCount;
+                                    "Instruction"=$Book
                                 }
                         }
                         else {
