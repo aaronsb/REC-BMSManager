@@ -61,16 +61,20 @@ Function Get-BMSBytesFromHexStream {
 
         $i = 1
         #Initalize byte stream counter
-
         $LSB = 0
         $MSB = ($SegmentOffset -1)
-
         #initialize byte segment counter
         $b = 1
         #initialize first byte segment array based on FloatingPrecisionBits
         #$ByteSegment = [byte[]]::new($SegmentLength)
         do {
-            [BitConverter]::ToSingle($ByteStream[$LSB..$MSB], 0)
+            try {
+                [BitConverter]::ToSingle($ByteStream[$LSB..$MSB], 0)
+            }
+            catch {
+                Throw "Segment offset out of bounds!"
+            }
+            
             $LSB+=$SegmentOffset
             $MSB+=$SegmentOffset
             $i++
