@@ -1,3 +1,5 @@
+
+
 Function Add-HexStreamEncapsulation {
     Param($iO)
     foreach ($row in $iO) {
@@ -43,10 +45,8 @@ Function Add-HexStreamEncapsulation {
         Write-Verbose ("[HexStream]: Assembly complete")
         $HexDataInspection = $HexStream | %{[convert]::ToByte($_,16)} | Format-Hex
         $HexStreamSend = (@{
-            "HandlerEventCount"=($Row.HandlerEventCount);
             "RawStream"=$HexStream;
-            "InspectedStream"=$HexDataInspection;
-            "ParsedStream"=(Sort-MessageStream $HexStream)
+            "InspectedStream"=$HexDataInspection
         })
         $Row | Add-Member -Name "HexStreamSend" -Type NoteProperty -Value $HexStreamSend
     }
