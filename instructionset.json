@@ -10,8 +10,9 @@
                 "Parity": "None",
                 "DataBits": 8,
                 "StopBits": "One",
-                "ReadTimeout": 250,
-                "WriteTimeout": 250
+                "ReadTimeout": 900,
+                "WriteTimeout": 250,
+                "DTREnable": true
             },
             "Session": {
                 "SessionThrottle": 500,
@@ -46,7 +47,9 @@
             "Return": {
                 "Description": "Device identification",
                 "Unit": "Description",
-                "Value": "string"
+                "Value": "string",
+                "Position": 0,
+                "Part": 0
             },
             "Category": "Identification",
             "Handler": "String"
@@ -66,62 +69,63 @@
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "message length in bytes",
+                            "Description": "Byte count of message payload",
                             "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
                         },
                         {
-                            "Description": "min cell voltage",
-                            "Unit": "volts",
+                            "Description": "Minimum Cell Voltage",
+                            "Unit": "Volt",
                             "Value": "float",
                             "Position": 1,
                             "Part": 1
                         },
                         {
-                            "Description": "max cell voltage",
-                            "Unit": "volts",
+                            "Description": "Maximum Cell Voltage",
+                            "Unit": "Volt",
                             "Value": "float",
                             "Position": 2,
                             "Part": 1
                         },
                         {
-                            "Description": "current",
-                            "Unit": "volts",
+                            "Description": "Pack Current",
+                            "Unit": "Amps",
                             "Value": "float",
                             "Position": 3,
                             "Part": 1
                         },
                         {
-                            "Description": "max temperature",
-                            "Unit": "celcius",
+                            "Description": "Maximum Temperature",
+                            "Unit": "Celcius",
                             "Value": "float",
                             "Position": 4,
                             "Part": 1
                         },
                         {
-                            "Description": "pack voltage",
-                            "Unit": "volts",
+                            "Description": "Pack Voltage",
+                            "Unit": "Volt",
                             "Value": "float",
                             "Position": 5,
                             "Part": 1
                         },
                         {
-                            "Description": "SOC (state of charge) interval 0-1-> 1=100%",
-                            "Unit": "percent",
+                            "Description": "State of Charge",
+                            "Unit": "Percent",
                             "Value": "float",
                             "Position": 6,
                             "Part": 1
                         },
                         {
-                            "Description": "SOH (state of health) interval 0-1-> 1=100%",
-                            "Unit": "percent",
+                            "Description": "State of Health",
+                            "Unit": "Percent",
                             "Value": "float",
                             "Position": 7,
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "Byte"
                 }
             },
             "Category": "Information",
@@ -138,73 +142,74 @@
             "Value": null,
             "Return": {
                 "Description": "Array of values",
-                "Value": "IntArray",
+                "Value": "Array",
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "byte count of message payload",
+                            "Description": "Byte count of message payload",
                             "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
                         },
                         {
-                            "Description": "min cell BMS address",
-                            "Unit": "identity_bms",
+                            "Description": "BMS Address of Minimum Cell Voltage",
+                            "Unit": "MinCellBMSID",
                             "Value": "char",
                             "Position": 1,
                             "Part": 1
                         },
                         {
-                            "Description": "min cell number",
-                            "Unit": "identity_cell",
+                            "Description": "Cell Address of Minimum Cell Voltage",
+                            "Unit": "MinCellID",
                             "Value": "char",
                             "Position": 2,
                             "Part": 1
                         },
                         {
-                            "Description": "max cell BMS address",
-                            "Unit": "identity_bms",
+                            "Description": "BMS Address of Maximum Cell Voltage",
+                            "Unit": "MaxCellBMSID",
                             "Value": "char",
                             "Position": 3,
                             "Part": 1
                         },
                         {
-                            "Description": "max cell number",
-                            "Unit": "identity_cell",
+                            "Description": "Cell Address of Maximum Cell Voltage",
+                            "Unit": "MaxCellID",
                             "Value": "char",
                             "Position": 4,
                             "Part": 1
                         },
                         {
-                            "Description": "max temperature sense BMS address",
-                            "Unit": "identity_bms",
+                            "Description": "BMS Address of Maximum Temp Sensor",
+                            "Unit": "MaxTempBMSID",
                             "Value": "char",
                             "Position": 5,
                             "Part": 1
                         },
                         {
-                            "Description": "max temperature sense number",
-                            "Unit": "identity_cell",
+                            "Description": "Temp Sensor Address of Maximum Value",
+                            "Unit": "MaxTempSensorID",
                             "Value": "char",
                             "Position": 6,
                             "Part": 1
                         },
                         {
-                            "Description": "Ah MSB",
-                            "Unit": "AmpHour",
+                            "Description": "AH_MSB",
+                            "Unit": "Ah0",
                             "Value": "byte",
                             "Position": 7,
                             "Part": 1
                         },
                         {
-                            "Description": "Ah LSB",
-                            "Unit": "AmpHour",
+                            "Description": "AH_LSB",
+                            "Unit": "Ah1",
                             "Value": "byte",
                             "Position": 8,
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "IntMixedBytes"
                 }
             },
             "Category": "Information",
@@ -225,20 +230,21 @@
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "number of BMS units",
+                            "Description": "Number of BMS Units",
                             "Unit": "UnitCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
                         },
                         {
-                            "Description": "cell voltage",
-                            "Unit": "voltage",
-                            "Value": "double",
+                            "Description": "Cell",
+                            "Unit": "Volt",
+                            "Value": "float",
                             "Position": "template",
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "Byte"
                 }
             },
             "Category": "Information",
@@ -259,20 +265,21 @@
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "number of BMS units",
+                            "Description": "Number of BMS Units",
                             "Unit": "UnitCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
                         },
                         {
-                            "Description": "cell temperature",
+                            "Description": "Cell",
                             "Unit": "celcius",
                             "Value": "float",
                             "Position": "template",
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "Byte"
                 }
             },
             "Category": "Information",
@@ -293,20 +300,21 @@
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "number of BMS units",
+                            "Description": "Number of BMS Units",
                             "Unit": "UnitCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
                         },
                         {
-                            "Description": "cell resistance",
+                            "Description": "Cell",
                             "Unit": "ohms",
                             "Value": "float",
                             "Position": "template",
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "Byte"
                 }
             },
             "Category": "Information",
@@ -327,20 +335,21 @@
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "Count of bytes",
+                            "Description": "Byte count of message payload",
                             "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
                             "Part": 0
                         },
                         {
-                            "Description": "BMS temperature",
+                            "Description": "BMS",
                             "Unit": "celcius",
                             "Value": "float",
                             "Position": "template",
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "Byte"
                 }
             },
             "Category": "Information",
@@ -357,11 +366,11 @@
             "Value": null,
             "Return": {
                 "Description": "Variable array of values",
-                "Value": "IntArray",
+                "Value": "Array",
                 "Unit": {
                     "Array": [
                         {
-                            "Description": "data bytes to be sent",
+                            "Description": "Byte count of message payload",
                             "Unit": "ByteCount",
                             "Value": "char",
                             "Position": 0,
@@ -395,7 +404,8 @@
                             "Position": 4,
                             "Part": 1
                         }
-                    ]
+                    ],
+                    "Type": "Int"
                 }
             },
             "Category": "Information",
@@ -404,8 +414,8 @@
         {
             "Alias": "BalanceEnd",
             "Instruction": "BVOL",
-            "Name": "Balance end voltage",
-            "Description": "Returns voltage value",
+            "Name": "Balance end Voltage",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -415,7 +425,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -424,8 +434,8 @@
         {
             "Alias": "BalanceStart",
             "Instruction": "BMIN",
-            "Name": "Balance start voltage",
-            "Description": "Returns voltage value",
+            "Name": "Balance start Voltage",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -435,7 +445,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -444,8 +454,8 @@
         {
             "Alias": "CellMax",
             "Instruction": "CMAX",
-            "Name": "Cell over-voltage switch-off",
-            "Description": "Returns voltage value",
+            "Name": "Cell over-Voltage switch-off",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -455,7 +465,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -464,8 +474,8 @@
         {
             "Alias": "CellHysteresisMax",
             "Instruction": "MAXH",
-            "Name": "Over-voltage switch-off hysteresis per cell",
-            "Description": "Returns voltage value",
+            "Name": "Over-Voltage switch-off hysteresis per cell",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -475,7 +485,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -484,8 +494,8 @@
         {
             "Alias": "CellMin",
             "Instruction": "CMIN",
-            "Name": "Cell under-voltage switch-off",
-            "Description": "Returns voltage value",
+            "Name": "Cell under-Voltage switch-off",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -495,7 +505,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -504,8 +514,8 @@
         {
             "Alias": "CellHysteresisMin",
             "Instruction": "MINH",
-            "Name": "Under- voltage switch-off hysteresis between cells",
-            "Description": "Returns voltage value",
+            "Name": "Under- Voltage switch-off hysteresis between cells",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -515,7 +525,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -524,8 +534,8 @@
         {
             "Alias": "CellChargeEnd",
             "Instruction": "CHAR",
-            "Name": "Cell End of charging voltage",
-            "Description": "Returns voltage value",
+            "Name": "Cell End of charging Voltage",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -535,7 +545,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -544,8 +554,8 @@
         {
             "Alias": "CellChargeHysteresisEnd",
             "Instruction": "CHIS",
-            "Name": "End of charging voltage hysteresis per cell",
-            "Description": "Returns voltage value",
+            "Name": "End of charging Voltage hysteresis per cell",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -555,7 +565,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -565,7 +575,7 @@
             "Alias": "CellDifferenceMax",
             "Instruction": "RAZL",
             "Name": "Cells max difference",
-            "Description": "Returns voltage value",
+            "Description": "Returns Voltage value",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -575,7 +585,7 @@
             "Value": "float",
             "Return": {
                 "Description": "volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Cell",
@@ -904,8 +914,8 @@
         {
             "Alias": "CellDischargeProtectionMin",
             "Instruction": "CLOW",
-            "Name": "cell under-voltage discharge protection",
-            "Description": "cell under-voltage discharge protection",
+            "Name": "cell under-Voltage discharge protection",
+            "Description": "cell under-Voltage discharge protection",
             "Common": false,
             "ReadOnly": false,
             "Range": {
@@ -914,8 +924,8 @@
             },
             "Value": "float",
             "Return": {
-                "Description": "voltage per cell",
-                "Unit": "Volts",
+                "Description": "Voltage per cell",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "Victron",
@@ -954,7 +964,7 @@
             },
             "Value": "int",
             "Return": {
-                "Description": "Count of cycles of cells over max voltage",
+                "Description": "Count of cycles of cells over max Voltage",
                 "Unit": "count",
                 "Value": "int"
             },
@@ -974,7 +984,7 @@
             },
             "Value": "int",
             "Return": {
-                "Description": "Count of cycles of cells under minimum voltage",
+                "Description": "Count of cycles of cells under minimum Voltage",
                 "Unit": "count",
                 "Value": "int"
             },
@@ -1029,7 +1039,7 @@
             "Value": "float",
             "Return": {
                 "Description": "even cell calibration value in volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "BMS",
@@ -1049,7 +1059,7 @@
             "Value": "float",
             "Return": {
                 "Description": "odd cell calibration value in volts",
-                "Unit": "volts",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "BMS",
@@ -1058,14 +1068,14 @@
         {
             "Alias": "ADCReferenceVoltage",
             "Instruction": "REFC",
-            "Name": "ADC reference voltage 5.000 V +/- 3 mV",
-            "Description": "Analog Digital Converter reference voltage 5.000 V +/- 3 mV",
+            "Name": "ADC reference Voltage 5.000 V +/- 3 mV",
+            "Description": "Analog Digital Converter reference Voltage 5.000 V +/- 3 mV",
             "Common": false,
             "ReadOnly": true,
             "Value": "float",
             "Return": {
-                "Description": "ADC reference voltage value",
-                "Unit": "volts",
+                "Description": "ADC reference Voltage value",
+                "Unit": "Volt",
                 "Value": "float"
             },
             "Category": "BMS",
