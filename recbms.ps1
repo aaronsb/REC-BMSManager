@@ -63,7 +63,7 @@ Function Get-BMSParameter
             $AttributeCollection.Add($ValidateSetAttribute)
     
             # Create and return the dynamic parameter
-            $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [string], $AttributeCollection)
+            $RuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($ParameterName, [array], $AttributeCollection)
             $RuntimeParameterDictionary.Add($ParameterName, $RuntimeParameter)
             return $RuntimeParameterDictionary
         }
@@ -71,40 +71,31 @@ Function Get-BMSParameter
         begin {
             $Instruction = $PSBoundParameters[$ParameterName]
         }
-    
+        
+        
         process {
-            $t = 0
-            do {
-                try {
-                    $Data = Parse-BMSMessage (
-                        Send-BMSMessage (
-                            Build-BMSMessage (
-                                Assert-BMSMessage -Command $Instruction
-                            )
+                $Data = Parse-BMSMessage (
+                    Send-BMSMessage (
+                        Build-BMSMessage (
+                            Assert-BMSMessage -Command $Instruction
                         )
                     )
+                )
 
-                    if ($Extra) {
-                        $Data.PSObject.Copy()
-                        break
-                    }
-                    else {
-                        ($Data.BMSData.0).PSObject.Copy()
-                        if ($Data.BMSData.1) {
-                            ($Data.BMSData.1).PSObject.Copy()
+                if ($Extra) {
+                    $Data.PSObject.Copy()
+                    break
+                }
+                else {
+                    ForEach ($iOInstance in $Data)
+                    {
+                        ($iOInstance.BMSData.0).PSObject.Copy()
+                        if ($iOInstance.BMSData.1) {
+                            ($iOInstance.BMSData.1).PSObject.Copy()
                         }
-                        
-                        break
                     }
+
                 }
-                catch {
-                    Write-Warning "Serial peer unresponsive. Retrying."
-                }
-                $t++
-            } until ($t -eq $BMSInstructionSet.Config.Session.Retries)
-            if (!$Data) {
-                Write-Error "Sorry it didn't work out right. Try again. :("
-            }
         }
 }
 
