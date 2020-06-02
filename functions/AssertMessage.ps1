@@ -20,21 +20,21 @@ Function Assert-BMSMessage {
             param($instructionValue, $Book)
             if ([double]$Command.$Key -ge [double]$Book.Range.Min) {
                 if ([double]$Command.$Key -le [double]$Book.Range.Max) {
-                    Write-Verbose ("[" + $Command.$Key + " <= " + $Book.Range.Max + "]: RangeMax Accepted")
+                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + " <= " + $Book.Range.Max + "]: RangeMax Accepted")
                     $thisMinMax.Max = $true
                 }
                 else {
                     $thisMinMax.Max = $false
-                    Write-Verbose ("[" + $Command.$Key + " !<= " + $Book.Range.Max + "]: RangeMax NOT Accepted")
+                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + " !<= " + $Book.Range.Max + "]: RangeMax NOT Accepted")
                 }
-                Write-Verbose ("[" + $Command.$Key + " >= " + $Book.Range.Min + "]: RangeMin Accepted")
+                Write-Verbose ("[MsgAssert]: [" + $Command.$Key + " >= " + $Book.Range.Min + "]: RangeMin Accepted")
                 $thisMinMax.Min = $true
             }
             else {
                 $thisMinMax.Min = $false
-                Write-Verbose ("[" + $Command.$Key + " !>= " + $Book.Range.Min + "]: RangeMin NOT Accepted")
+                Write-Verbose ("[MsgAssert]: [" + $Command.$Key + " !>= " + $Book.Range.Min + "]: RangeMin NOT Accepted")
             }
-            Write-Verbose ("[" + $Book.Return.Value + "]: Instruction type validated")
+            Write-Verbose ("[MsgAssert]: [" + $Book.Return.Value + "]: Instruction type validated")
             return $thisMinMax
         }
 
@@ -52,17 +52,17 @@ Function Assert-BMSMessage {
 
                 $Book = ($Library | ?{$_.Instruction -eq $Key.ToUpper()})
                 if (!$Book) {
-                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
+                    Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
                     #throw the book?
-                    Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
+                    Write-Warning ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
                     return
                 }
                 else {
-                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction Validation Success")
+                    Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Instruction Validation Success")
                 }
                 
-                Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Instruction is Known")
-                Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: " + $Book.Name)
+                Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Instruction is Known")
+                Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: " + $Book.Name)
                 
                 switch ($Book.Return.Value) {
                     Array {
@@ -79,7 +79,7 @@ Function Assert-BMSMessage {
                 #region valdating command/query
                 if (($Command.$Key.Length -eq "0") -or ($Command.$Key -eq "?")) {
                     #if data is empty or query, turn it into a query or assert as a query
-                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Null Instruction Data: Asserting to Query")
+                    Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Null Instruction Data: Asserting to Query")
                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                     $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                     [char]"?" | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
@@ -92,14 +92,14 @@ Function Assert-BMSMessage {
                     }
                 }
                 else {
-                    Write-Verbose ("[" + $Key + ":" + $Command.$Key + "]: Validating Instruction DataType")
+                    Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Validating Instruction DataType")
                     #validation code using the a page from the book aka return object parameters
                     #don't want to turn up the BMS to 11 accidently. is there a knob that goes that high?
                     if (($Book.ReadOnly -eq $true) -and ($Command.$Key -ne "?")) {
                         #respect readonly instruction flag definition. Discard any instruction data that is included.
                         #in a more strict implementation, this instruction should probably just be discarded.
-                        Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Expected Query with ReadOnly Instruction")
-                        Write-Warning ("[" + $Key + ":" + $Command.$Key + "]: Disallowed Instruction Data: Setting to Query")
+                        Write-Warning ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Expected Query with ReadOnly Instruction")
+                        Write-Warning ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Disallowed Instruction Data: Setting to Query")
                         $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                         $CommandCopy += ,[pscustomobject]@{"Hex"=$HexEncodedInstruction;"Plain"=$Command.$Key;"Command"=$Key.ToUpper()}
                         $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
@@ -115,7 +115,7 @@ Function Assert-BMSMessage {
                         switch ($Book.Return.Value) {
                             "float" {
                                 if ($Command.$Key -as [float]) {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is float")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is float")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
@@ -123,12 +123,12 @@ Function Assert-BMSMessage {
                                     [System.BitConverter]::GetBytes([float]$Command.$Key) | %{"{0:x2}" -f $_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT float")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT float")
                                 }
                             }
                             "int" {
                                 if (($Command.$Key -as [int]) -or ($Command.$Key -eq 0)) {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is int")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is int")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
@@ -138,12 +138,12 @@ Function Assert-BMSMessage {
                                     [int]$Command.$Key | %{"{0:x2}" -f [int16]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT int")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT int")
                                 }
                             }
                             "array" {
                                 if ($Command.$Key) {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is an array")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is an array")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     #array types are always read only and have a return handler elsewhere
@@ -155,12 +155,12 @@ Function Assert-BMSMessage {
                                     [char]"?" | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT an array")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT an array")
                                 }
                             }
                             "char" {
                                 if ($Command.$Key -as [char]) {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is char")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is char")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
@@ -168,19 +168,19 @@ Function Assert-BMSMessage {
                                     [char]$Command.$Key | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
-                                    Write-Verbose ("[" + $Command.$Key + "]: Value Is NOT char")
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT char")
                                 }
                             }
                             Default {
-                                Write-Verbose ("[" + $Book.Return.Value + "]: No handler for this value type")
-                                Write-Error ("[" + $Book.Return.Value + "]: No handler for this value type. Verify Dictionary data.")
+                                Write-Verbose ("[MsgAssert]: [" + $Book.Return.Value + "]: No handler for this value type")
+                                Write-Error ("[MsgAssert]: [" + $Book.Return.Value + "]: No handler for this value type. Verify Dictionary data.")
                                 $thisTypeValid = $false
                                 $thisMinMax.Max = $false
                                 $thisMinMax.Min = $false
                             }
                         }
                         if (($thisMinMax.Max -eq $true) -and ($thisMinMax.Min -eq $true) -and ($thisTypeValid -eq $true)) {
-                            Write-Verbose ("[" + $Key + "]: Added to validated instruction stack")
+                            Write-Verbose ("[MsgAssert]: [" + $Key + "]: Added to validated instruction stack")
                             $CommandCopy += ,[pscustomobject]@{
                                     "Hex"=$HexEncodedInstruction;
                                     "Plain"=$Command.$Key;
@@ -190,7 +190,7 @@ Function Assert-BMSMessage {
                                 }
                         }
                         else {
-                            Write-Verbose ("[" + $Key + "]: NOT Added to validated instruction stack")
+                            Write-Verbose ("[MsgAssert]: [" + $Key + "]: NOT Added to validated instruction stack")
                         }
                         
                     }

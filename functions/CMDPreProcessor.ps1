@@ -10,19 +10,19 @@ Function Invoke-CmdPreprocessor {
 
         switch ($Command.GetType().Name) {
             "Hashtable" {
-                Write-Verbose "Case: Command Type Hashtable"
-                Write-Verbose ("Processing " + $Command.Keys.Count + " command(s)")
-                Write-Verbose ("Commands to execute: " + $Command.Keys)
+                Write-Verbose "[PreProcessor]: Case: Command Type Hashtable"
+                Write-Verbose ("[PreProcessor]: Processing " + $Command.Keys.Count + " command(s)")
+                Write-Verbose ("[PreProcessor]: Commands to execute: " + $Command.Keys)
             }
             "String" {
-                Write-Verbose "Case: Command Type String"
+                Write-Verbose "[PreProcessor]: Case: Command Type String"
                 #give an option of just typing an instruction in - this will be cast into a single hashtable
                 #with the instruction set as a query only
-                Write-Verbose ("Casting command string to single query")
+                Write-Verbose ("[PreProcessor]: Casting command string to single query")
                 $Command = @{$Command="?"}
             }
             "Object[]" {
-                Write-Verbose "Case: Command Type Array of Strings"
+                Write-Verbose "[PreProcessor]: Case: Command Type Array of Strings"
                 #give an option of just typing instructions in a comma delimited form in - this will be cast into a hashtable
                 #with the instruction set as a query only
                 $CommandList = @{}

@@ -26,9 +26,9 @@
                     "SND": "00",
                     "LEN": "00",
                     "MSG": null,
-                    "QRY": "3F",
+                    "QRY": "3f",
                     "CRC": "0000",
-                    "ETX": "AA"
+                    "ETX": "aa"
                 },
                 "FloatPrecision": "single"
             }

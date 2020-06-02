@@ -9,9 +9,6 @@
 # CRC functions for signing byte data streams
 . .\functions\CRC16.ps1
 
-# Hex -> Decimal and Decimal -> Hex converter helpers
-. .\functions\HexConverters.ps1
-
 # Instruction message builder to suit instruction command structure syntax
 . .\functions\BuildMessage.ps1
 
@@ -76,14 +73,38 @@ Function Get-BMSParameter
         }
     
         process {
-            #just an invocation wrapper to make it easier, mostly.
-            Parse-BMSMessage (
-                Send-BMSMessage (
-                    Build-BMSMessage (
-                        Assert-BMSMessage -Command $Instruction
+            $t = 0
+            do {
+                try {
+                    $Data = Parse-BMSMessage (
+                        Send-BMSMessage (
+                            Build-BMSMessage (
+                                Assert-BMSMessage -Command $Instruction
+                            )
+                        )
                     )
-                )
-            ) 
+
+                    if ($Extra) {
+                        $Data.PSObject.Copy()
+                        break
+                    }
+                    else {
+                        ($Data.BMSData.0).PSObject.Copy()
+                        if ($Data.BMSData.1) {
+                            ($Data.BMSData.1).PSObject.Copy()
+                        }
+                        
+                        break
+                    }
+                }
+                catch {
+                    Write-Warning "Serial peer unresponsive. Retrying."
+                }
+                $t++
+            } until ($t -eq $BMSInstructionSet.Config.Session.Retries)
+            if (!$Data) {
+                Write-Error "Sorry it didn't work out right. Try again. :("
+            }
         }
 }
 

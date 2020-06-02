@@ -1,37 +1,29 @@
 
-Function Get-BMSCharsFromHexStream {
+Function Get-BMSCharsFromByteStream {
     [CmdletBinding()]
-    param($HexString)
+    param($Bytes)
 
-    $ComputablePayloadLength = ([convert]::toint16($HexString[3],16) + 3)
-    $MessageStream = ($HexString[4..$ComputablePayloadLength])
-
-    ($MessageStream | ForEach-Object{[char][convert]::toint16($_,16)}) -join ""
+    $L = ([int]$Bytes[3] + 3)
+    (($Bytes[4..$L]) | ForEach-Object{[char]$_}) -join ""
 }
 
-Function Get-BMSIntMixedBytesFromHexStream {
+Function Get-BMSIntMixedBytesFromByteStream {
     [CmdletBinding()]
-    param($HexString)
-
-    $ComputablePayloadLength = ([convert]::toint16($HexString[3],16) + 3)
-    $MessageStream = ($HexString[4..$ComputablePayloadLength])
-
-    ($MessageStream | ForEach-Object{[convert]::toint16($_,16)})
+    param($Bytes)
+    $L = ([int]$Bytes[3] + 3)
+    ($Bytes[4..$L])
 }
 
-Function Get-BMSIntFromHexStream {
+Function Get-BMSIntFromByteStream {
     [CmdletBinding()]
-    param($HexString)
-
-    $ComputablePayloadLength = ([convert]::toint16($HexString[3],16) + 3)
-    $MessageStream = ($HexString[4..$ComputablePayloadLength])
-
-    ($MessageStream | ForEach-Object{[convert]::toint16($_,16)})
+    param($String)
+    $L = ([int]$Bytes[3] + 3)
+    ($Bytes[4..$L]) | ForEach-Object{[int]$_}
 }
 
-Function Get-BMSBytesFromHexStream {
+Function Get-BMSBytesFromByteStream {
     [CmdletBinding()]
-    param($HexString)
+    param($Bytes)
     #assign floating point byte array size
     switch ($BMSInstructionSet.Config.Message.FloatPrecision) {
         single {
@@ -45,14 +37,13 @@ Function Get-BMSBytesFromHexStream {
 
 
     #End offset length index -1 for array count, and -2 for crc and -1 for etx 
-    $Offset = ($HexString.Length -4)
+    $Offset = ($Bytes.Length -4)
+
+    Write-Verbose ("[Parser]: Parsing float as [" + $SegmentOffset + "] Byte Arrays")
+    Write-Verbose ("[Parser]: Payload Length: [" + ($MessageStream.Count) + "]")
 
     #Front offset is +1 
-    $MessageStream = $HexString[4..($Offset)]
-    
-    Write-Verbose ("Parsing float as [" + $SegmentLength + "] Byte Stream")
-    Write-Verbose ("Payload Length: [" + ($MessageStream.Count) + "]")
-    $ByteStream = ($MessageStream | ForEach-Object{$_}) | %{[byte][int16]("0x" + $_)}
+    $ByteStream = $Bytes[4..($Offset)]
     
     if ($ByteStream.Count -eq $SegmentLength) {
         [BitConverter]::ToSingle($ByteStream, 0)
@@ -102,18 +93,20 @@ Function Verify-MessageCRC {
     $i=0
         do {
             #offset length index -1 for array count, and -2 for crc and -1 for etx 
-            $CRCOffset = ($iO.HexStreamReceive.ParsedStream[$i].Length -4)
+            $CRCOffset = ($iO.ByteStreamReceive.ParsedStream[$i].Length -4)
             #get bytes for crc calculation
-            $CRCTask = $iO.HexStreamReceive.ParsedStream[$i][1..($CRCOffset)]
+            $CRCTask = $iO.ByteStreamReceive.ParsedStream[$i][1..($CRCOffset)]
 
             #Old crc is two bytes before etx
-            $OldCRC = $iO.HexStreamReceive.ParsedStream[$i][($CRCOffset +1)..($CRCOffset +2)] -join ""
+            $OldCRC = ($iO.ByteStreamReceive.ParsedStream[$i][($CRCOffset +1)..($CRCOffset +2)] | ForEach-Object {"{0:x2}" -f $_}) -join ""
 
             #recalculate crc
-            $NewCRC = Get-CRC16 $CRCTask -join ""
+            $NewCRC = Get-CRC16 -ByteData $CRCTask
 
             #compare crc
-            Write-Verbose ("String to Compute: [" + $CRCTask + "]`r`n" + "Received CRC: [" + $OldCRC + "]`r`n" + "Computed CRC: [" + $NewCRC + "]")
+            Write-Verbose ("[CRC]: String to Compute: [" + $CRCTask + "]")
+            Write-Verbose ("[CRC]: Received CRC: [" + $OldCRC + "]")
+            Write-Verbose ("[CRC]: Computed CRC: [" + $NewCRC + "]")
             if (!($NewCRC -eq $OldCRC)) {
                     $CRCStream.Add($i,$false)
                     Write-Error ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
@@ -123,9 +116,9 @@ Function Verify-MessageCRC {
                 }
             $i++
     } 
-    until ($iO.HexStreamReceive.ParsedStream.Count -eq $i)
+    until ($iO.ByteStreamReceive.ParsedStream.Count -eq $i)
 
-    $iO.HexStreamReceive.Add("CRCStream",$CRCStream)
+    $iO.ByteStreamReceive.Add("CRCStream",$CRCStream)
     return $iO
     #compute/add CRC
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
@@ -136,32 +129,44 @@ Function Parse-BMSMessage
     [cmdletbinding()]
     Param($iO,[switch]$ExtraInfo)
     begin {
-        if (!$iO.HexStreamReceive)
+        if (!$iO.ByteStreamReceive)
         {
-            Throw "This Instruction Object does not contain a received hex stream to decode."
+            Throw "This Instruction Object does not contain received byte stream(s) to decode."
         }
         Function LabelHeaderValues {
             [CmdletBinding()]
             param($iO)
             $Header = $null
-            $Descriptor = $iO.Instruction.Return.Unit.Array | ?{$_.Position -eq 0}
-            switch ($Descriptor.Value) {
-                char {
-                    #note that we just have a handler for char types, because bms appears to send segment 0 data types as ascii values that are cast to integers
-                    $h = [int](Get-BMSCharsFromHexStream $iO.HexStreamReceive.ParsedStream[0])
-                    $Header = @{
-                        "Unit" = $Descriptor.Unit;
-                        "Value" = $h;
-                        "Description" = $Descriptor.Description
+            switch ($iO.Instruction.Handler) {
+                array {
+                    $Descriptor = $iO.Instruction.Return.Unit.Array | ?{$_.Position -eq 0}
+                    switch ($Descriptor.Value) {
+                        char {
+                            #note that we just have a handler for char types, because bms appears to send segment 0 data types as ascii values that are cast to integers
+                            $h = [int](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0])
+                            $Header = @{
+                                "Unit" = $Descriptor.Unit;
+                                "Value" = $h;
+                                "Description" = $Descriptor.Description
+                            }
+                        }
+                        Default {
+                            Write-Error ("Unknown Value Type Declaration: " + $iO.Instruction.Return.Unit.Array[0].Value)
+                        }
                     }
                 }
                 Default {
-                    Write-Error ("Unknown Value Type Declaration: " + $iO.Instruction.Return.Unit.Array[0].Value)
+                    $Descriptor = $iO.Instruction.Return
+                    $Header = @{
+                        "Unit" = $Descriptor.Unit;
+                        "Value" = $Descriptor.Value;
+                        "Description" = $iO.Instruction.Description
+                    }
                 }
             }
             
             # present the count types as either count of bytes or counts of bms units depending on library data
-            Write-Verbose ("Instruction Identification: [" + $Descriptor.Description + "]")
+            Write-Verbose ("[Parser]: Instruction Identification: [" + $Descriptor.Description + "]")
             Return ([PSCustomObject]$Header)
         }
 
@@ -171,20 +176,20 @@ Function Parse-BMSMessage
             $Data = @()
             switch ($iO.Instruction.Return.Unit.Type) {
                 Int {
-                    Write-Verbose "Using Int array parser"
-                    $Values = Get-BMSIntFromHexStream $iO.HexStreamReceive.ParsedStream[1]
+                    Write-Verbose "[Parser]: Using Int array parser"
+                    $Values = Get-BMSIntFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
                 }
                 Byte {
-                    Write-Verbose "Using Bytes array parser"
-                    $Values = Get-BMSBytesFromHexStream $iO.HexStreamReceive.ParsedStream[1]
+                    Write-Verbose "[Parser]: Using Bytes array parser"
+                    $Values = Get-BMSBytesFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
                 }
                 IntMixedBytes {
-                    Write-Verbose "Using Int Mixed with Bytes array parser"
-                    $Values = Get-BMSIntMixedBytesFromHexStream $iO.HexStreamReceive.ParsedStream[1]
+                    Write-Verbose "[Parser]: Using Int Mixed with Bytes array parser"
+                    $Values = Get-BMSIntMixedBytesFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
                 }
                 Char {
-                    Write-Verbose "Using Char array parser"
-                    $Values = Get-BMSCharsFromHexStream $iO.HexStreamReceive.ParsedStream[1]
+                    Write-Verbose "[Parser]: Using Char array parser"
+                    $Values = Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
                 }
                 Default {
                     Throw "I don't know how to handle that array object class. :("
@@ -201,7 +206,7 @@ Function Parse-BMSMessage
                 #add a dingus to the top of descriptor array. in other non-template arrays,
                 #the first index [0] is the header data and is skipped. This keeps template type arrays
                 #aligned with non-template style arrays.
-                Write-Verbose ("Processing: [" + $Values.Count + "] values")
+                Write-Verbose ("[Parser]: Processing: [" + $Values.Count + "] values")
                 $Descriptor += $Template.PSObject.Copy()
                 do {
                     $TemplateCopy = $Template.PSObject.Copy()
@@ -219,9 +224,9 @@ Function Parse-BMSMessage
             do {
                 #for each descriptor index, process the value
                 $Row = @{
-                    "Unit" = $Descriptor[($i+1)].Unit;
-                    "Value" = $Values[$i];
                     "Description" = $Descriptor[($i+1)].Description;
+                    "Value" = $Values[$i];
+                    "Unit" = $Descriptor[($i+1)].Unit
                 }
                 $Data += [PSCustomObject]$Row
                 $i++
@@ -231,45 +236,33 @@ Function Parse-BMSMessage
             
             Return ($Data)
         }
+
     }
     process {
-        Write-Verbose ("Instruction Decoding Handler: [" + $iO.Instruction.Return.Value + "]")
-        Write-Verbose ("Instruction Description: [" + $iO.Instruction.Alias + "]")
+        Write-Verbose ("[Parser]: Instruction Decoding Handler: [" + $iO.Instruction.Return.Value + "]")
+        Write-Verbose ("[Parser]: Instruction Description: [" + $iO.Instruction.Alias + "]")
         switch ($iO.Instruction.Return.Value) {
             string {
-                $Data = [string](Get-BMSCharsFromHexStream $iO.HexStreamReceive.ParsedStream[0])
-                $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $Data
-                Write-Verbose $iO.Instruction.Return.Description
-                Write-Verbose $iO.Instruction.Return.Unit
-                Write-Verbose ([string]$iO.BMSData)
+                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
+                ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0])
             }
         
             float {
-                $Data = ("{0:N}" -f [float](Get-BMSCharsFromHexStream $iO.HexStreamReceive.ParsedStream[0]))
-                $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $Data
-                Write-Verbose $iO.Instruction.Return.Description
-                Write-Verbose $iO.Instruction.Return.Unit
-                Write-Verbose ("{0:N}" -f ([float]$iO.BMSData))
+                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
+                ($BMSData.0).Value =  ("{0:N}" -f [float](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0]))
             }
         
             char {
-                $Data = [char](Get-BMSCharsFromHexStream $iO.HexStreamReceive.ParsedStream[0])
-                $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $Data
-                Write-Verbose $iO.Instruction.Return.Description
-                Write-Verbose $iO.Instruction.Return.Unit
-                Write-Verbose ([char]$iO.BMSData)
+                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
+                ($BMSData.0).Value = [char](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0])
             }
         
             int  {
-                $Data = ("{0:N}" -f [int](Get-BMSCharsFromHexStream $iO.HexStreamReceive.ParsedStream[0]))
-                $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $Date
-                Write-Verbose $iO.Instruction.Return.Description
-                Write-Verbose $iO.Instruction.Return.Unit
-                Write-Verbose ([int]("{0:N}" -f ([int]$iO.BMSData)))
+                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
+                ($BMSData.0).Value = ("{0:N}" -f [int](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0]))
             }
         
             array  {
-                
                 # each type of array has two parts (hex stream messages):
                 # first part is some sort of metadata about the BMS ID, or number of instructions/values expected
                 # there is some inconsistency in the first value, so handler cases are necessary for this.
@@ -279,19 +272,39 @@ Function Parse-BMSMessage
                 #
                 # the second part is the value array, which can be dynamic from a single value (like BMS controller temperature),
                 # to several values such as error reporting, to many values, such as cell voltages
-                
-
-                
-                
                 $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO);"1"=(LabelDataArrayValues $iO)}
-                $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $BMSData
+                
+                #special fix/hack for LCD3, which packs a value in individual LSB-MSB values 
+                if ($iO.Command -eq "LCD3") {
+                    $Ah = [bitconverter]::ToInt16(($BMSData.1)[7..8].value,0)
+                    $BMSData.1 = ($BMSData.1)[0..5]
+                    $BMSData.1 += [PSCustomObject]@{
+                        "Unit" = "Ah";
+                        "Value" = $Ah;
+                        "Description" = "Amp Hours since last charge"
+                    }
+                }
             }
         
             Default  {
-                Write-Warning ("No handler for type [" + $iO.Instruction.Return.Value + "]")
+                Write-Warning ("[Parser]: No handler for type [" + $iO.Instruction.Return.Value + "]")
                 break
             }
+            
         }
+        if ($BMSData.1) {
+            Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Description)
+            Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Unit)
+            Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Value)
+            Write-Verbose ("[Parser]: Values continue: [" + (($BMSData.1).Count -1) + "] more in data")
+        }
+        else {
+            Write-Verbose ("[Parser]" + ($BMSData.0).Description)
+            Write-Verbose ("[Parser]" + ($BMSData.0).Unit)
+            Write-Verbose ("[Parser]" + ($BMSData.0).Value)
+        }
+
+        $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $BMSData
         return $iO.PSObject.Copy()
     }
 }

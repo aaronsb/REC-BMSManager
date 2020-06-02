@@ -2,31 +2,35 @@ Function Send-BMSMessage {
     [cmdletbinding()]
     Param($iO)
         begin {
-            #trap all errors.
+            #trap errors, but try and close port always
             trap {
-            Write-Error $error[0]
-            $port.Close()
-            break
+                Write-Error $error[0]
+                $port.Close()
+                break
             }
 
+            #REGION private function definitions
             function Open-SerialPort {
+                [cmdletbinding()]
                 $r = 0
                 do {
                     #open the port this session
                     try {
                         $port.Open()
                         if ($port.IsOpen) {
-                            Write-Verbose ("Waited [$r] tries to open serial port")
+                            Write-Verbose ("[Serial]: Waited [$r] tries to open serial port")
+                            #$port.ReadExisting() | Out-Null
                             break
                         }
-                        
                     }
                     catch
                     {
-                        write-warning "Couldn't open port, Retrying: $r"
+                        $port.Close()
+                        write-warning "[Serial]: Couldn't open port, Retrying: $r"
+                        write-Verbose ($port | Format-Table | Out-String)
                         $r++
                     }
-                    Start-Sleep -Milliseconds $BMSInstructionSet.Config.Session.SessionTimeout
+                    Start-Sleep -Milliseconds ($BMSInstructionSet.Config.Session.SessionTimeout * $r)
                 } until ($r -gt $BMSInstructionSet.Config.Session.Retries)
                 
                 if (!$port.IsOpen) {
@@ -35,38 +39,223 @@ Function Send-BMSMessage {
             }
 
             Function Send-SerialBytes {
-                param($SendBytes)
+                [cmdletbinding()]
+                param($iO)
+
+                #internalize sendbytes
+                $SendBytes = $io.ByteStreamSend.RawStream
+                
+                #Write the message on the line. Bon Voyage!
+                Write-Verbose ("[SendByte]: [" + $SendBytes.count + "] bytes on [" + $port.PortName + "]")
                 try {
-               
-                    #clear existing buffer, just in case something is sending on the line
-                    #this could probably be built more robust, but for now it's at least an acknowledgement that the line should be clear.
-                    $port.ReadExisting() | Out-Null
-                    
-                    #Write the message on the line. Bon Voyage!
-                    Write-Verbose ("Sending " + $SendBytes.count + " bytes on " + $port.PortName)
                     $port.Write([byte[]] $SendBytes, 0, ($SendBytes.count))
-                    Write-Verbose "Sucessful TX of instruction"
+                    Write-Verbose "[SendByte]: Sucessful TX of instruction"
                 }
                 catch {
                     #catch the rest of the errors related to opening serial ports.
                     Throw "Couldn't send bytes on serial port"
-                    break
                 }
             }
-            #Define a watch dog object to use in serial communication timeouts.
-            $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
-            #convert the hex string to a byte array.
-            $SendBytes = Convert-HexToByteArray ($iO.HexStreamSend.RawStream -join "")
 
-            #define array for return data stream
+            Function Read-SerialBytes {
+                [cmdletbinding()]
+                # $baz = Send-BMSMessage (Build-BMSMessage (Assert-BMSMessage -Command rint -verbose) -Verbose) -verbose
+                #initalize message part index
+                $WatchDog = New-Object -TypeName System.Diagnostics.Stopwatch
+                $IndexMessagePart = 1
+
+                #message part ordered keypair array container
+
+
+
+                #receieved bms messages have up to two parts returned per instruction sent
+                #this is a hard typed handler that only collects up to two parts
+                #there's probably some trickery to make this continuously window byte arrays into collections
+                #but I just don't really need it
+                #initalize byte index
+
+                $Stream = @()
+                $Indexes = [ordered]@{}
+                $StreamComplete = $false
+                $i = 0
+                $byteSTX = [system.convert]::ToByte($BMSInstructionSet.Config.Message.Components.STX,16)
+                $byteETX = [system.convert]::ToByte($BMSInstructionSet.Config.Message.Components.ETX,16)
+                Write-Verbose ("--------------------------------------------------------------")
+                Write-Verbose ("|Mesg type|Pointer ID| Descriptor|    (Conditionally) Data   |")
+                Write-Verbose ("--------------------------------------------------------------")
+                Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <STX> Start Message Received")
+                $WatchDog.Start()
+                do {
+                    #clear last data value before attempting another read
+                    $Data = $null
+
+                    if ($StreamComplete -eq $false) {
+                        #cast these bytes to hex, which makes it easy to test for difference between 
+                        #null byte and a zero byte
+                        $Data = "{0:x2}" -f $port.ReadByte() 
+                        #add retrieved byte to stream array
+                        if ($Data) {
+                            $Stream += [convert]::ToByte($Data, 16)
+                            Write-Verbose ("[ReadByte]: Index: [" + $i + "]: Data:[" + $data + "]")
+                            #add data onto the stack
+                        }
+                        else {
+                            Write-Verbose ("[" + $i + "]: No data found during port readbyte")
+                        }
+                    }
+                    else {
+                        Write-Verbose "StreamComplete indicates true. Exiting serial read loop."
+                        #return out of do loop because stream is complete
+                        break
+                    }
+
+                    
+
+
+
+                    # behold my IF-THEN state machine. :)
+
+                    #REGION: First message start (STX) pointer logic
+                    if (($Stream[$i] -eq $byteSTX) -and ($i -eq 0)) {
+                        Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <STX> Start Message Received")
+                        #first byte of the stream. only occurs once.
+                        #crossing this event with index 0 ensures we don't get a false start positive in the stream later.
+                        $firstIndexSTX = $i
+                        $firstIndexLEN = $i + 3
+                    }
+
+                    #REGION: first message length byte read logic
+                    if ($i -eq $firstIndexLEN) {
+                        #time to calculate total bytes of this message
+                        #7 bytes added to message length:
+                        # 4 <STX><DST><SND><LEN> for message header
+                        # 3 <CRC><CRC><ETX> for footer
+                        $firstIndexMessageLength = (([int]$Stream[$firstIndexLEN]) + 7)
+                        #message length, added to firststx (0) minus 1 to index $i from zero
+                        #the point of this exercise is to maybe get to a point of understanding how this works
+                        #so I can make an unlimited parser instead of a two message parser
+                        $firstIndexETX = (($firstIndexMessageLength + $firstIndexSTX) -1)
+                        Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <LEN> (" + $firstIndexMessageLength + ") Received")
+                    }
+
+                    #REGION: end of first transmission logic
+                    if ($i -eq $firstIndexETX) {
+                        Write-Verbose ("[MesgFlow]: Index: [" + $i + "]: <ETX> End Message part 1")
+                        #this should be the end of the first message part, since stream index equals byte count of (message + padding)
+                    
+                        if ($Stream[$i] -ne $byteETX) {
+                            #expected end of stream, got something else
+                            #something has gone wrong, break out
+                            Write-Warning "Expected end of message byte 0xaa. Malformed message."
+                            break
+                        }
+                        
+                        if ($IndexMessagePart -eq ($iO.HandlerCount)) {
+                            #at end of message stream, if no more messages are expected,
+                            #bail from loop
+                            Write-Verbose ("[EXIT] No more message parts expected: MessageIndex: " + $IndexMessagePart)
+                            Write-Verbose "[EXIT] Returning serial port collection loop"
+                            $Indexes.Add($IndexMessagePart,@{"STX"=$firstIndexSTX;"ETX"=$firstIndexETX})
+                            $StreamComplete = $true
+                            break
+                        }
+
+                        if (($iO.HandlerCount) -gt $IndexMessagePart) {
+                            #if we haven't reached the count of handles (messages) for this instruction reception
+                            #increment message part so we can process the next time we fall into a sensible <ETX> condition
+                            #store indexes for first message part
+                            $Indexes.Add($IndexMessagePart,@{"STX"=$firstIndexSTX;"ETX"=$firstIndexETX})
+                            $IndexMessagePart++
+                        }
+                    }
+
+                    #REGION End of first message, but now there's a second
+                    if (($i -eq ($firstIndexETX +1)) -and ($Stream[$i] -eq $byteSTX)) {
+                        Write-Verbose ("[MesgFlow]: Index: [" + $i + "]: Next message continues")
+                        Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <STX> received: Data: [" + ("{0:x2}" -f $Stream[$i]) + "]")
+                        # clearly, this is the start of the second message
+                        # index of (first <ETX> byte + 1) is the <STX> of second message.
+                        # save index of of second <STX>
+                        $secondIndexSTX = $i
+                        # predict index of second message length in stream 
+                        $secondIndexLEN = $i + 3
+                    }
+
+                    #REGION second message length read logic
+                    if ($i -eq $secondIndexLEN) {
+                        #time to calculate total bytes of this message
+                        #7 bytes added to message length:
+                        # 4 <STX><DST><SND><LEN> for message header
+                        # 3 <CRC><CRC><ETX> for footer
+                        $secondIndexMessageLength = ([int]$Stream[$secondIndexLEN] + 7)
+                        #message length, added to firststx (0) minus 1 to index $i from zero
+                        #the point of this exercise is to maybe get to a point of understanding how this works
+                        #so I can make an unlimited parser instead of an only two message parser
+                        $secondIndexETX = (($secondIndexMessageLength + $secondIndexSTX) -1)
+                        Write-Verbose ("[MesgFlow]: Index: [" + $i + "]: Next message continues")
+                        Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <LEN> (" + $secondIndexMessageLength + ") Received")
+                    }
+
+                    #REGION end of second message part and related logic
+                    if (($i -eq $secondIndexETX) -and ($Stream[$i] -eq $byteETX)) {
+                        $secondIndexETX = $i
+                        Write-Verbose ("[MesgFlow]: Index: [" + $i + "] <ETX> [Message part 2]")
+                        #this should be the end of the second message part, since stream index equals byte count of (message + padding)
+                        if ($Stream[$i] -ne $byteETX) {
+                            #expected end of stream, got something else
+                            #something has gone wrong, break out
+                            Write-Warning "[ERROR] Expected end of message byte 0xaa. Malformed message."
+                            break
+                        }
+                        #at end of message stream, if no more messages are expected,
+                        #bail from loop
+                        Write-Verbose "[EXIT] No more message parts expected."
+                        Write-Verbose "[EXIT] Returning serial port collection loop"
+                        $Indexes.Add($IndexMessagePart,@{"STX"=$secondIndexSTX;"ETX"=$secondIndexETX})
+                        $StreamComplete = $true
+                        break
+
+                        if (($iO.HandlerCount) -gt $IndexMessagePart) {
+                            #if we haven't reached the count of handles (messages) for this instruction reception
+                            #throw a fit because something has gone wrong - only two messages in a stream are allowed
+                            Throw "REC BMS messages only contain up to two messages in return stream."
+                        }
+                    }
+                    if ($data){
+
+                        $i++
+                    }
+
+                } until ($WatchDog.ElapsedMilliseconds -ge $BMSInstructionSet.Config.Session.SessionTimeout)
+                #REGION close up shop and emit data
+                $WatchDog.Stop()
+                $ParsedStream = [ordered]@{}
+                $ParsedStream.Add("0",$Stream[$firstIndexSTX..$firstIndexETX])
+                #add next part if there's more than one
+                if ($IndexMessagePart -gt 1) {
+                    $ParsedStream.Add("1",$Stream[$secondIndexSTX..$secondIndexETX])
+                }
+                
+                return @{"RawStream"=$Stream;"ParsedStream"=$ParsedStream}
+            }
+            #ENDREGION private function definitions
+
+
+            #REGION timer setup
+            #Define a timer to see how long things take
+            $Timer = New-Object -TypeName System.Diagnostics.Stopwatch
+            #ENDREGION timer setup
             
-            #enumerate the configurable list from the metadata
+            #REGION Serial Setup
+        
+            #Set up serial port parameters.
             #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
             $SerialConfigurables = $BMSInstructionSet.Config.Client.PSObject.Properties.Name
+
             #create a new serial port object.
             $global:Port = new-Object System.IO.Ports.SerialPort
-    
-            #set properties in the serial port.
+            
+            #REGION serial setup 
             try {
                     ForEach ($item in $SerialConfigurables) {
                     $port.$item = $BMSInstructionSet.Config.Client.$item
@@ -76,186 +265,67 @@ Function Send-BMSMessage {
                 catch {
                     Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
                 }
+            #ENDREGION serial setup
         }
     
         process {
             
-            
-            
-            
+            #REGION Main loop
+
+            #Open the serial port
             Open-SerialPort
 
+            #zzz TODO add a loop to process multiple message send events
+
             #start the timer for transmit event.
-            $WatchDog.Start()
-
+            $Timer.Start()
             #port should stay open for immediate receieve
-            Send-SerialBytes $SendBytes
-            #stop the timer for transmit event.
-            $WatchDog.Stop()
-            Write-Verbose ("Serial TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-            #reset the timer for the next event.
-            $WatchDog.Reset()
-    
-            #Wait a specified number of milliseconds. 
-            Start-Sleep -m $BMSInstructionSet.Config.Session.SessionThrottle
-            
-            #create a new pscustomobject array to store multiparts of stream
-            $MultiPartObject = New-Object PSCustomObject
-            
-            #Number of expected message parts to be returned.
-            #Usually arrays are 2 parts, informational then the data.
-            #everything else is 1 part
+            Send-SerialBytes $iO
 
+            #stop the timer for transmit event.
+            $Timer.Stop()
+            Write-Verbose ("[Serial]: TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+            #reset the timer for the next event.
+            $Timer.Reset()
     
-            #initalize byte index
-            $i = 0
-            
-            #estimated number of bytes for Stream
-            $StreamLengthEstimate = 0
-           
-            #initalize start transmission (sub)index
-            $thisSTX = 0
-    
-            #initalize end transmission (sub)index
-            $thisETX = 0
-            
-            #initalize length (sub)index
-            $thisLEN = 0
-            
-            #initalize (sub)length value 
-            $StreamPartLength = 0
-    
-            #initalize message part index
-            $IndexMessagePart = 1
-            
-            #initialize empty array to store all bytes
-            $Stream = New-Object System.Collections.Generic.List[System.Object]
-    
-            Write-Verbose ("Expecting " + $iO.HandlerCount + " parts in bytestream")
-    
-    
+            #Wait a specified number of milliseconds.
+            Write-Verbose ("[Serial]: Sleeping " + $BMSInstructionSet.Config.Session.SessionThrottle + " milliseconds")
+            Start-Sleep -m $BMSInstructionSet.Config.Session.SessionThrottle
+
             #start the timer for the receieve event.
-            $WatchDog.Start()
+            $Timer.Start()
+
+            #Call read serial bytes
+            $StreamObject = Read-SerialBytes
             
-            do {
-                #null this iteration of data collection in loop (to stay sanitary)
-                $Data = $null
-                try {
-                    #if the count of bytes collected in stream is greater than the estimated stream length
-                    #and
-                    #the index of message parts is greater than the parts count defined from the dictonary for this particular instruction
-                    #(because some instructions are multi part messages, and we get multiple ETX bytes in a single Received transsmission session)
-                    #then
-                    #bail from loop before the next ReadByte() so we don't incur a buffer exception.
-    
-    
-                    if ($IndexMessagePart -gt $iO.HandlerCount)
-                    {
-                        Write-Verbose ("Reached expected message part count defined for this instruction.")
-                        $port.Close()
-                        $WatchDog.Stop()
-                        Write-Verbose ("Closed Port " + $port.PortName)
-                        Write-Verbose ("Received " + $Stream.count + " bytes on " + $port.PortName)
-                        Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-                        $WatchDog.Reset()
-                        Write-Verbose "Returning stream"
-                        
-                        #return the message as a hash array
-                        #next better version of this should be to define a custom class for this.
-                        $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-                        $iO | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
-                        Verify-MessageCRC $iO | out-null
-                        return $iO
-                    }
-                    #read a byte, format it as two position payload. If it reads a 4 position payload, something has gone wrong
-                    #with the serial port setup.
-                    if (!$port.IsOpen) {
-                        Write-Warning "The serial port is unexpectedly closed"
-                        try {
-                            Write-Warning "Turning the port off and on again (TM)"
-                            $port.Close()
-                            Open-SerialPort
-                        }
-                        catch {
-                            throw "The serial port was unexpectedly closed"
-                        }
-                    }
-                    $Data = "{0:x2}" -f $port.ReadByte()
-                    #add retrieved byte to stream array
-                    $Stream.Add($Data)
-    
-                    #IF Case matches byte <STX>
-                    if (($Data) -match "55")
-                    {
-                        #Save this index of STX from the stream index (which will keep incrementing)
-                        $thisSTX = $i
-                        #add 3 bytes of offset to get the index of length. We may not have Received this byte yet, this is a future lookup.
-                        $thisLEN = $thisSTX + 3
-                        Write-Verbose ("---------- <Detected: <STX>[$thisSTX]>---------- Begin Part " + $IndexMessagePart + " ---------- <")
-                        #Write-Verbose ("Length value is probably: " + )
-                    }
-    
-                    Write-Verbose ("PartIndex:[$IndexMessagePart] StreamIndex:[$i] ReadByte:[" + $Data + "]")
-    
-                    #IF Case matches byte <ETX>
-                    if (($Data) -match "aa")
-                    {
-                        #increment the completed message part counter
-                        $thisETX = $i
-                        Write-Verbose ("---------- <Detected: <ETX>[$thisETX]>---------- End Part " + $IndexMessagePart + " ---------- <")
-        
-                        #add the bytes stored in $MultiPartObject to our little PSCustomObject briefcase
-                        #inncrement the message part count index, since we found <ETX> in the stream
-                        $IndexMessagePart++
-                    }
-                    $i++
-                    
-                }
-                catch [System.TimeoutException]{
-                    #clean up the port and report error. :(
-                    Write-Error "End of buffer exception!"
-                    $port.Close()
-                    Write-Verbose ("Closed Port " + $port.PortName)
-                    $WatchDog.Stop()
-                    Write-Verbose ("Received " + $Stream.count + " bytes on " + $port.PortName)
-                    Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-                    $WatchDog.Reset()
-                    Write-Verbose "Returning stream"
-                    #return the message as a hash array
-                    #next better version of this should be to define a custom class for this.
-                    $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-                    $io | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
-                    
-                    #verify crc of messsage parts. Error is asserted if crc mismatch found, but object is still returned (for diagnostics? I guess...)
-                    Verify-MessageCRC $iO | out-null
-                    return $iO
-                    #this error is a failure and can cause dependent calls to fall on their face
-                    #if (unlikely) any good data comes out, crc check will provide some validation
-                }
-            } until ($WatchDog.ElapsedMilliseconds -ge $BMSInstructionSet.Config.Session.SessionTimeout)
-    
-            #this exit condition is one where watchdog caught the hard timeout.
-            #clean up the port and report our findings.
-            Write-Warning ("Serial timeout occured. Hard stop at " + $BMSInstructionSet.Config.Session.SessionTimeout + " milliseconds")
+            #Close the port, done with serial ops.
             $port.Close()
-            Write-Verbose ("Closed Port " + $port.PortName)
-            $WatchDog.Stop()
-            Write-Verbose ("Received " + $Stream.count + " bytes on " + $port.PortName)
-            Write-Verbose ("Serial RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-            $WatchDog.Reset()
-            Write-Verbose "Returning stream"
+            Write-Verbose ("[Serial]: Closed Port [" + $port.PortName + "]")
+
+            $Timer.Stop()
+            Write-Verbose ("[Serial]: RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+            Write-Verbose ("[Serial]: Received [" + $StreamObject.RawStream.count + "] bytes on port [" + $port.PortName +"]")
+            $Timer.Reset()
+            
+            Write-Verbose "[Serial]: Returning stream"
             #return the message as a hash array
             #next better version of this should be to define a custom class for this.
-            $HexDataInspection = ((Convert-HexToByteArray -HexString ($Stream -join "") | %{[char][int16]$_}) -join "") | Format-Hex
-            $iO | Add-Member -Name "HexStreamReceive" -Type NoteProperty -Value (@{"RawStream"=$Stream;"InspectedStream"=$HexDataInspection;"ParsedStream"=(Sort-MessageStream $Stream)})
-            Verify-MessageCRC $iO | out-null
-            return $iO
+            $iO | Add-Member -Name "ByteStreamReceive" -Type NoteProperty -Value (@{
+                "RawStream" = $StreamObject.RawStream;
+                "InspectedStream" = ($StreamObject.RawStream | Format-Hex -Encoding ascii);
+                "ParsedStream" = $StreamObject.ParsedStream})
+
             #this error is a failure and can cause dependent calls to fall on their face
             #if (unlikely) any good data comes out, crc check will provide some validation
+            Verify-MessageCRC $iO | Out-Null
+            return $iO
+
         }
 
         end {
+            Write-Verbose ("[Serial]: Closing Port " + $port.PortName)
             $port.Close()
+            Remove-Variable port -Scope Global
         }
         
     }
