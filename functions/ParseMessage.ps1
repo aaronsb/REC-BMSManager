@@ -2,7 +2,6 @@
 Function Get-BMSCharsFromByteStream {
     [CmdletBinding()]
     param($Bytes)
-
     $L = ([int]$Bytes[3] + 3)
     (($Bytes[4..$L]) | ForEach-Object{[char]$_}) -join ""
 }
@@ -160,7 +159,7 @@ Function Parse-BMSMessage
                     $Header = @{
                         "Unit" = $Descriptor.Unit;
                         "Value" = $Descriptor.Value;
-                        "Description" = $iOInstance.Instruction.Description
+                        "Description" = $iOInstance.Instruction.Name
                     }
                 }
             }
@@ -250,6 +249,7 @@ Function Parse-BMSMessage
             
                 float {
                     $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                    #Single value returns from BMS come back as chars, which we then cast into float.
                     ($BMSData.0).Value =  ("{0:N}" -f [float](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
                 }
             
@@ -260,7 +260,8 @@ Function Parse-BMSMessage
             
                 int  {
                     $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
-                    ($BMSData.0).Value = ("{0:N}" -f [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
+                    #Single value returns from BMS come back as chars, we cast these into formatted int
+                    ($BMSData.0).Value = ("{0:D0}" -f [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
                 }
             
                 array  {
