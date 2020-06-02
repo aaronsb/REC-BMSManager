@@ -5,50 +5,96 @@ Function Send-BMSMessage {
             #trap errors, but try and close port always
             trap {
                 Write-Error $error[0]
-                $port.Close()
+                $port.BaseStream.Dispose()
                 break
             }
 
             #REGION private function definitions
             function Open-SerialPort {
                 [cmdletbinding()]
+                param()
+                
+                #using System.IO.Ports.SerialPort.BaseStream method
+                #https://www.sparxeng.com/blog/software/must-use-net-system-io-ports-serialport
+                if (!$global:Port) {
+                    #create a new serial port object.
+                    Write-Verbose ("[Serial]: Created serial object")
+                    $global:Port = new-Object System.IO.Ports.SerialPort
+                }
+                else {
+                    Write-Warning ("Existing serial port instance found. Resetting")
+                    $port.BaseStream.Dispose()
+                    Start-Sleep -Milliseconds $BMSInstructionSet.Config.Session.SessionTimeout
+                    Remove-Variable port -Scope Global
+                    $global:Port = new-Object System.IO.Ports.SerialPort
+                }
+
+                #REGION Serial Setup
+        
+                #Set up serial port parameters.
+                #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
+                $SerialConfigurables = $BMSInstructionSet.Config.Client.PSObject.Properties.Name
+                
+                #REGION serial setup 
+                try {
+                        ForEach ($item in $SerialConfigurables) {
+                        $port.$item = $BMSInstructionSet.Config.Client.$item
+                        Write-Verbose ("[Serial]: " + $item + " : " + $port.$item)
+                        }
+                    }
+                    catch {
+                        Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
+                    }
+                #ENDREGION serial setup
+
                 $r = 0
                 do {
                     #open the port this session
                     try {
-                        $port.Open()
+                        if (!$port.IsOpen) {
+                            #Lazyish open of port
+                            Write-Verbose ("[Serial]: Serial IsClosed(). Attempting to open.")
+                            Start-Sleep -Milliseconds ($BMSInstructionSet.Config.Session.SessionTimeout * $r)
+                            $port.Open()
+                        }
+
                         if ($port.IsOpen) {
                             Write-Verbose ("[Serial]: Waited [$r] tries to open serial port")
-                            #$port.ReadExisting() | Out-Null
+                            #remove existind data on port if any
+                            $port.BaseStream.Flush() | Out-Null
                             break
                         }
                     }
                     catch
                     {
+                        Write-Error $Error[0]
                         $port.Close()
                         write-warning "[Serial]: Couldn't open port, Retrying: $r"
                         write-Verbose ($port | Format-Table | Out-String)
                         $r++
                     }
-                    Start-Sleep -Milliseconds ($BMSInstructionSet.Config.Session.SessionTimeout * $r)
+                    
                 } until ($r -gt $BMSInstructionSet.Config.Session.Retries)
                 
                 if (!$port.IsOpen) {
-                    Throw "Couldn't open serial port. Retried $r times."
+                    $ErrorString = ("Couldn't open serial port. Retried " + $r + " times.")
+                    Throw $ErrorString
                 }
             }
 
             Function Send-SerialBytes {
                 [cmdletbinding()]
-                param($iO)
+                param($iOInstance)
 
                 #internalize sendbytes
-                $SendBytes = $io.ByteStreamSend.RawStream
+                $SendBytes = $iOInstance.ByteStreamSend.RawStream
                 
                 #Write the message on the line. Bon Voyage!
                 Write-Verbose ("[SendByte]: [" + $SendBytes.count + "] bytes on [" + $port.PortName + "]")
                 try {
-                    $port.Write([byte[]] $SendBytes, 0, ($SendBytes.count))
+                    #using System.IO.Ports.SerialPort.BaseStream method
+                    #https://www.sparxeng.com/blog/software/must-use-net-system-io-ports-serialport
+                    $port.BaseStream.Write([byte[]] $SendBytes, 0, ($SendBytes.count))
                     Write-Verbose "[SendByte]: Sucessful TX of instruction"
                 }
                 catch {
@@ -92,7 +138,10 @@ Function Send-BMSMessage {
                     if ($StreamComplete -eq $false) {
                         #cast these bytes to hex, which makes it easy to test for difference between 
                         #null byte and a zero byte
-                        $Data = "{0:x2}" -f $port.ReadByte() 
+                        #I had significant issues with this until I started using BaseStream method
+                        #using System.IO.Ports.SerialPort.BaseStream method
+                        #https://www.sparxeng.com/blog/software/must-use-net-system-io-ports-serialport
+                        $Data = "{0:x2}" -f $port.BaseStream.ReadByte() 
                         #add retrieved byte to stream array
                         if ($Data) {
                             $Stream += [convert]::ToByte($Data, 16)
@@ -150,7 +199,7 @@ Function Send-BMSMessage {
                             break
                         }
                         
-                        if ($IndexMessagePart -eq ($iO.HandlerCount)) {
+                        if ($IndexMessagePart -eq ($iOInstance.HandlerCount)) {
                             #at end of message stream, if no more messages are expected,
                             #bail from loop
                             Write-Verbose ("[EXIT] No more message parts expected: MessageIndex: " + $IndexMessagePart)
@@ -160,7 +209,7 @@ Function Send-BMSMessage {
                             break
                         }
 
-                        if (($iO.HandlerCount) -gt $IndexMessagePart) {
+                        if (($iOInstance.HandlerCount) -gt $IndexMessagePart) {
                             #if we haven't reached the count of handles (messages) for this instruction reception
                             #increment message part so we can process the next time we fall into a sensible <ETX> condition
                             #store indexes for first message part
@@ -215,7 +264,7 @@ Function Send-BMSMessage {
                         $StreamComplete = $true
                         break
 
-                        if (($iO.HandlerCount) -gt $IndexMessagePart) {
+                        if (($iOInstance.HandlerCount) -gt $IndexMessagePart) {
                             #if we haven't reached the count of handles (messages) for this instruction reception
                             #throw a fit because something has gone wrong - only two messages in a stream are allowed
                             Throw "REC BMS messages only contain up to two messages in return stream."
@@ -246,26 +295,7 @@ Function Send-BMSMessage {
             $Timer = New-Object -TypeName System.Diagnostics.Stopwatch
             #ENDREGION timer setup
             
-            #REGION Serial Setup
-        
-            #Set up serial port parameters.
-            #the items in the metadata exactly match properties for a System.IO.Ports.SerialPort object
-            $SerialConfigurables = $BMSInstructionSet.Config.Client.PSObject.Properties.Name
 
-            #create a new serial port object.
-            $global:Port = new-Object System.IO.Ports.SerialPort
-            
-            #REGION serial setup 
-            try {
-                    ForEach ($item in $SerialConfigurables) {
-                    $port.$item = $BMSInstructionSet.Config.Client.$item
-                    Write-Verbose ("[Serial]: " + $item + " : " + $port.$item)
-                    }
-                }
-                catch {
-                    Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
-                }
-            #ENDREGION serial setup
         }
     
         process {
@@ -324,10 +354,11 @@ Function Send-BMSMessage {
         }
 
         end {
-            return $iO
             Write-Verbose ("[Serial]: Closing Port " + $port.PortName)
-            $port.Close()
+            $port.BaseStream.Dispose()
+            #dispose of port
             Remove-Variable port -Scope Global
+            return $iO
         }
         
     }

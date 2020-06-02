@@ -88,17 +88,17 @@ Function Get-BMSBytesFromByteStream {
 
 Function Verify-MessageCRC {
     [CmdletBinding()]
-    param($iO)
+    param($iOInstance)
     $CRCStream = [ordered]@{}
     $i=0
         do {
             #offset length index -1 for array count, and -2 for crc and -1 for etx 
-            $CRCOffset = ($iO.ByteStreamReceive.ParsedStream[$i].Length -4)
+            $CRCOffset = ($iOInstance.ByteStreamReceive.ParsedStream[$i].Length -4)
             #get bytes for crc calculation
-            $CRCTask = $iO.ByteStreamReceive.ParsedStream[$i][1..($CRCOffset)]
+            $CRCTask = $iOInstance.ByteStreamReceive.ParsedStream[$i][1..($CRCOffset)]
 
             #Old crc is two bytes before etx
-            $OldCRC = ($iO.ByteStreamReceive.ParsedStream[$i][($CRCOffset +1)..($CRCOffset +2)] | ForEach-Object {"{0:x2}" -f $_}) -join ""
+            $OldCRC = ($iOInstance.ByteStreamReceive.ParsedStream[$i][($CRCOffset +1)..($CRCOffset +2)] | ForEach-Object {"{0:x2}" -f $_}) -join ""
 
             #recalculate crc
             $NewCRC = Get-CRC16 -ByteData $CRCTask
@@ -116,10 +116,10 @@ Function Verify-MessageCRC {
                 }
             $i++
     } 
-    until ($iO.ByteStreamReceive.ParsedStream.Count -eq $i)
+    until ($iOInstance.ByteStreamReceive.ParsedStream.Count -eq $i)
 
-    $iO.ByteStreamReceive.Add("CRCStream",$CRCStream)
-    return $iO
+    $iOInstance.ByteStreamReceive.Add("CRCStream",$CRCStream)
+    return $iOInstance
     #compute/add CRC
     #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
 }
@@ -127,7 +127,7 @@ Function Verify-MessageCRC {
 Function Parse-BMSMessage
 {   
     [cmdletbinding()]
-    Param($iO,[switch]$ExtraInfo)
+    Param($iO)
     begin {
         if (!$iO.ByteStreamReceive)
         {
@@ -135,15 +135,15 @@ Function Parse-BMSMessage
         }
         Function LabelHeaderValues {
             [CmdletBinding()]
-            param($iO)
+            param($iOInstance)
             $Header = $null
-            switch ($iO.Instruction.Handler) {
+            switch ($iOInstance.Instruction.Handler) {
                 array {
-                    $Descriptor = $iO.Instruction.Return.Unit.Array | ?{$_.Position -eq 0}
+                    $Descriptor = $iOInstance.Instruction.Return.Unit.Array | ?{$_.Position -eq 0}
                     switch ($Descriptor.Value) {
                         char {
                             #note that we just have a handler for char types, because bms appears to send segment 0 data types as ascii values that are cast to integers
-                            $h = [int](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0])
+                            $h = [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
                             $Header = @{
                                 "Unit" = $Descriptor.Unit;
                                 "Value" = $h;
@@ -151,16 +151,16 @@ Function Parse-BMSMessage
                             }
                         }
                         Default {
-                            Write-Error ("Unknown Value Type Declaration: " + $iO.Instruction.Return.Unit.Array[0].Value)
+                            Write-Error ("Unknown Value Type Declaration: " + $iOInstance.Instruction.Return.Unit.Array[0].Value)
                         }
                     }
                 }
                 Default {
-                    $Descriptor = $iO.Instruction.Return
+                    $Descriptor = $iOInstance.Instruction.Return
                     $Header = @{
                         "Unit" = $Descriptor.Unit;
                         "Value" = $Descriptor.Value;
-                        "Description" = $iO.Instruction.Description
+                        "Description" = $iOInstance.Instruction.Description
                     }
                 }
             }
@@ -172,33 +172,33 @@ Function Parse-BMSMessage
 
         Function LabelDataArrayValues {
             [CmdletBinding()]
-            param($iO)
+            param($iOInstance)
             $Data = @()
-            switch ($iO.Instruction.Return.Unit.Type) {
+            switch ($iOInstance.Instruction.Return.Unit.Type) {
                 Int {
                     Write-Verbose "[Parser]: Using Int array parser"
-                    $Values = Get-BMSIntFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
+                    $Values = Get-BMSIntFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[1]
                 }
                 Byte {
                     Write-Verbose "[Parser]: Using Bytes array parser"
-                    $Values = Get-BMSBytesFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
+                    $Values = Get-BMSBytesFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[1]
                 }
                 IntMixedBytes {
                     Write-Verbose "[Parser]: Using Int Mixed with Bytes array parser"
-                    $Values = Get-BMSIntMixedBytesFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
+                    $Values = Get-BMSIntMixedBytesFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[1]
                 }
                 Char {
                     Write-Verbose "[Parser]: Using Char array parser"
-                    $Values = Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[1]
+                    $Values = Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[1]
                 }
                 Default {
                     Throw "I don't know how to handle that array object class. :("
                 }
             }
-            if ($iO.Instruction.Return.Unit.Array | ?{$_.Position -eq "template"}) {
+            if ($iOInstance.Instruction.Return.Unit.Array | ?{$_.Position -eq "template"}) {
                 #store the template
                 $Descriptor = @()
-                $Template = ($iO.Instruction.Return.Unit.Array | ?{$_.Position -eq "template"})
+                $Template = ($iOInstance.Instruction.Return.Unit.Array | ?{$_.Position -eq "template"})
                 #assign template to position 1 in array
                 
                 #add a copy of template with position ID $Values.Count -1 times
@@ -217,7 +217,7 @@ Function Parse-BMSMessage
                 } until ($i -gt $Values.Count)
             }
             else {
-                $Descriptor = ($iO.Instruction.Return.Unit.Array | Sort-Object -Property Position)
+                $Descriptor = ($iOInstance.Instruction.Return.Unit.Array | Sort-Object -Property Position)
             }
 
             $i = 0
@@ -239,72 +239,75 @@ Function Parse-BMSMessage
 
     }
     process {
-        Write-Verbose ("[Parser]: Instruction Decoding Handler: [" + $iO.Instruction.Return.Value + "]")
-        Write-Verbose ("[Parser]: Instruction Description: [" + $iO.Instruction.Alias + "]")
-        switch ($iO.Instruction.Return.Value) {
-            string {
-                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
-                ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0])
-            }
-        
-            float {
-                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
-                ($BMSData.0).Value =  ("{0:N}" -f [float](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0]))
-            }
-        
-            char {
-                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
-                ($BMSData.0).Value = [char](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0])
-            }
-        
-            int  {
-                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO)}
-                ($BMSData.0).Value = ("{0:N}" -f [int](Get-BMSCharsFromByteStream $iO.ByteStreamReceive.ParsedStream[0]))
-            }
-        
-            array  {
-                # each type of array has two parts (hex stream messages):
-                # first part is some sort of metadata about the BMS ID, or number of instructions/values expected
-                # there is some inconsistency in the first value, so handler cases are necessary for this.
-                #
-                # because there isn't an expectation of this structure to change very much, there isn't any type of function recursion
-                # for managing these use cases.
-                #
-                # the second part is the value array, which can be dynamic from a single value (like BMS controller temperature),
-                # to several values such as error reporting, to many values, such as cell voltages
-                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iO);"1"=(LabelDataArrayValues $iO)}
-                
-                #special fix/hack for LCD3, which packs a value in individual LSB-MSB values 
-                if ($iO.Command -eq "LCD3") {
-                    $Ah = [bitconverter]::ToInt16(($BMSData.1)[7..8].value,0)
-                    $BMSData.1 = ($BMSData.1)[0..5]
-                    $BMSData.1 += [PSCustomObject]@{
-                        "Unit" = "Ah";
-                        "Value" = $Ah;
-                        "Description" = "Amp Hours since last charge"
+        foreach ($iOInstance in $iO) {
+            Write-Verbose ("[Parser]: Instruction Decoding Handler: [" + $iOInstance.Instruction.Return.Value + "]")
+            Write-Verbose ("[Parser]: Instruction Description: [" + $iOInstance.Instruction.Alias + "]")
+            switch ($iOInstance.Instruction.Return.Value) {
+                string {
+                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                    ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+                }
+            
+                float {
+                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                    ($BMSData.0).Value =  ("{0:N}" -f [float](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
+                }
+            
+                char {
+                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                    ($BMSData.0).Value = [char](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+                }
+            
+                int  {
+                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                    ($BMSData.0).Value = ("{0:N}" -f [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
+                }
+            
+                array  {
+                    # each type of array has two parts (hex stream messages):
+                    # first part is some sort of metadata about the BMS ID, or number of instructions/values expected
+                    # there is some inconsistency in the first value, so handler cases are necessary for this.
+                    #
+                    # because there isn't an expectation of this structure to change very much, there isn't any type of function recursion
+                    # for managing these use cases.
+                    #
+                    # the second part is the value array, which can be dynamic from a single value (like BMS controller temperature),
+                    # to several values such as error reporting, to many values, such as cell voltages
+                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance);"1"=(LabelDataArrayValues $iOInstance)}
+                    
+                    #special fix/hack for LCD3, which packs a value in individual LSB-MSB values 
+                    if ($iOInstance.Command -eq "LCD3") {
+                        $Ah = [bitconverter]::ToInt16(($BMSData.1)[7..8].value,0)
+                        $BMSData.1 = ($BMSData.1)[0..5]
+                        $BMSData.1 += [PSCustomObject]@{
+                            "Unit" = "Ah";
+                            "Value" = $Ah;
+                            "Description" = "Amp Hours since last charge"
+                        }
                     }
                 }
+            
+                Default  {
+                    Write-Warning ("[Parser]: No handler for type [" + $iOInstance.Instruction.Return.Value + "]")
+                    break
+                }
+                
             }
-        
-            Default  {
-                Write-Warning ("[Parser]: No handler for type [" + $iO.Instruction.Return.Value + "]")
-                break
+            if ($BMSData.1) {
+                Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Description)
+                Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Unit)
+                Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Value)
+                Write-Verbose ("[Parser]: Values continue: [" + (($BMSData.1).Count -1) + "] more in data")
             }
+            else {
+                Write-Verbose ("[Parser]" + ($BMSData.0).Description)
+                Write-Verbose ("[Parser]" + ($BMSData.0).Unit)
+                Write-Verbose ("[Parser]" + ($BMSData.0).Value)
+            }
+    
+            $iOInstance | Add-Member -MemberType NoteProperty -Name BMSData -Value $BMSData
             
         }
-        if ($BMSData.1) {
-            Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Description)
-            Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Unit)
-            Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Value)
-            Write-Verbose ("[Parser]: Values continue: [" + (($BMSData.1).Count -1) + "] more in data")
-        }
-        else {
-            Write-Verbose ("[Parser]" + ($BMSData.0).Description)
-            Write-Verbose ("[Parser]" + ($BMSData.0).Unit)
-            Write-Verbose ("[Parser]" + ($BMSData.0).Value)
-        }
-
-        $iO | Add-Member -MemberType NoteProperty -Name BMSData -Value $BMSData
         return $iO.PSObject.Copy()
     }
 }
