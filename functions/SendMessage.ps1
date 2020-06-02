@@ -277,52 +277,54 @@ Function Send-BMSMessage {
 
             #zzz TODO add a loop to process multiple message send events
 
-            #start the timer for transmit event.
-            $Timer.Start()
-            #port should stay open for immediate receieve
-            Send-SerialBytes $iO
+            foreach ($iOInstance in $iO) {
+                #start the timer for transmit event.
+                $Timer.Start()
+                #port should stay open for immediate receieve
+                Send-SerialBytes $iOInstance
 
-            #stop the timer for transmit event.
-            $Timer.Stop()
-            Write-Verbose ("[Serial]: TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-            #reset the timer for the next event.
-            $Timer.Reset()
-    
-            #Wait a specified number of milliseconds.
-            Write-Verbose ("[Serial]: Sleeping " + $BMSInstructionSet.Config.Session.SessionThrottle + " milliseconds")
-            Start-Sleep -m $BMSInstructionSet.Config.Session.SessionThrottle
+                #stop the timer for transmit event.
+                $Timer.Stop()
+                Write-Verbose ("[Serial]: TX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+                #reset the timer for the next event.
+                $Timer.Reset()
+        
+                #Wait a specified number of milliseconds.
+                Write-Verbose ("[Serial]: Sleeping " + $BMSInstructionSet.Config.Session.SessionThrottle + " milliseconds")
+                Start-Sleep -m $BMSInstructionSet.Config.Session.SessionThrottle
 
-            #start the timer for the receieve event.
-            $Timer.Start()
+                #start the timer for the receieve event.
+                $Timer.Start()
 
-            #Call read serial bytes
-            $StreamObject = Read-SerialBytes
+                #Call read serial bytes
+                $StreamObject = Read-SerialBytes
+                #return the message as a hash array
+                #next better version of this should be to define a custom class for this.
+                $iOInstance | Add-Member -Name "ByteStreamReceive" -Type NoteProperty -Value (@{
+                    "RawStream" = $StreamObject.RawStream;
+                    "InspectedStream" = ($StreamObject.RawStream | Format-Hex -Encoding ascii);
+                    "ParsedStream" = $StreamObject.ParsedStream})
+
+                
+                $Timer.Stop()
+                Write-Verbose ("[Serial]: RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
+                Write-Verbose ("[Serial]: Received [" + $StreamObject.RawStream.count + "] bytes on port [" + $port.PortName +"]")
+                $Timer.Reset()
+                
+                Write-Verbose "[Serial]: Returning stream"
+
+
+                #this error is a failure and can cause dependent calls to fall on their face
+                #if (unlikely) any good data comes out, crc check will provide some validation
+                Verify-MessageCRC $iOInstance | Out-Null
+                
+
+            }
             
-            #Close the port, done with serial ops.
-            $port.Close()
-            Write-Verbose ("[Serial]: Closed Port [" + $port.PortName + "]")
-
-            $Timer.Stop()
-            Write-Verbose ("[Serial]: RX milliseconds: " + $WatchDog.ElapsedMilliseconds)
-            Write-Verbose ("[Serial]: Received [" + $StreamObject.RawStream.count + "] bytes on port [" + $port.PortName +"]")
-            $Timer.Reset()
-            
-            Write-Verbose "[Serial]: Returning stream"
-            #return the message as a hash array
-            #next better version of this should be to define a custom class for this.
-            $iO | Add-Member -Name "ByteStreamReceive" -Type NoteProperty -Value (@{
-                "RawStream" = $StreamObject.RawStream;
-                "InspectedStream" = ($StreamObject.RawStream | Format-Hex -Encoding ascii);
-                "ParsedStream" = $StreamObject.ParsedStream})
-
-            #this error is a failure and can cause dependent calls to fall on their face
-            #if (unlikely) any good data comes out, crc check will provide some validation
-            Verify-MessageCRC $iO | Out-Null
-            return $iO
-
         }
 
         end {
+            return $iO
             Write-Verbose ("[Serial]: Closing Port " + $port.PortName)
             $port.Close()
             Remove-Variable port -Scope Global
