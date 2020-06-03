@@ -4,6 +4,13 @@
             "Battery": {
                 "CellCount": 14
             },
+            "ChemistryTypes": {
+                "Li-po Kokam High power": 1,
+                "Li-po Kokam High capacity": 2,
+                "LiFePO4 Winston": 3,
+                "LiFePO4 A123": 4,
+                "LiMnO2": 5
+            },
             "Client": {
                 "PortName": "/dev/ttyUSB0",
                 "BaudRate": 38400,
@@ -1080,6 +1087,23 @@
             },
             "Category": "BMS",
             "Handler": "Range"
-        }
+        },
+        {
+            "Alias": "WritePassword",
+            "Instruction": "PASS",
+            "Name": "Write Enable Password - Experimental",
+            "Description": "Enables writing",
+            "Common": false,
+            "ReadOnly": false,
+            "Range": null,
+            "Value": "string",
+            "Return": {
+                "Description": "not sure!",
+                "Unit": "identity",
+                "Value": "string"
+            },
+            "Category": "Information",
+            "Handler": "String"
+        },
     ]
 }
