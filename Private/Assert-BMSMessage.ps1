@@ -194,6 +194,7 @@ Function Assert-BMSMessage {
                                         $thisMinMax.Min = $true
                                     }
                                     $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    [char]$BMSInstructionSet.Config.Message.Components.CMD | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     $Command.$Key.ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {

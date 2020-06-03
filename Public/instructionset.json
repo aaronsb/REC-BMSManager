@@ -34,6 +34,7 @@
                     "LEN": "00",
                     "MSG": null,
                     "QRY": "3f",
+                    "CMD": " ",
                     "CRC": "0000",
                     "ETX": "aa"
                 },
@@ -1087,23 +1088,6 @@
             },
             "Category": "BMS",
             "Handler": "Range"
-        },
-        {
-            "Alias": "WritePassword",
-            "Instruction": "PASS",
-            "Name": "Write Enable Password - Experimental",
-            "Description": "Enables writing",
-            "Common": false,
-            "ReadOnly": false,
-            "Range": null,
-            "Value": "string",
-            "Return": {
-                "Description": "not sure!",
-                "Unit": "identity",
-                "Value": "string"
-            },
-            "Category": "Information",
-            "Handler": "String"
-        },
+        }
     ]
 }
