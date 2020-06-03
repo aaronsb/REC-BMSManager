@@ -1,4 +1,4 @@
-Function Parse-BMSMessage
+Function Convert-BMSMessage
 {   
     [cmdletbinding()]
     Param($iO)

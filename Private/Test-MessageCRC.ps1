@@ -1,4 +1,4 @@
-Function Verify-MessageCRC {
+Function Test-MessageCRC {
     [CmdletBinding()]
     param($iOInstance)
     $CRCStream = [ordered]@{}

@@ -47,7 +47,7 @@ Function Get-BMSParameter {
             $r = 0
             do {
                 try {
-                    $Data = Parse-BMSMessage (
+                    $Data = Convert-BMSMessage (
                         Send-BMSMessage (
                             Build-BMSMessage (
                                 Assert-BMSMessage -Command $Instruction

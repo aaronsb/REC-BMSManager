@@ -367,7 +367,7 @@ Function Send-BMSMessage {
 
                 #this error is a failure and can cause dependent calls to fall on their face
                 #if (unlikely) any good data comes out, crc check will provide some validation
-                Verify-MessageCRC $iOInstance | Out-Null
+                Test-MessageCRC $iOInstance | Out-Null
                 #increment step number for progressbar
                 $ProgressStepNumber++
             }

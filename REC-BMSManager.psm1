@@ -12,18 +12,18 @@
 
 
 $RECBMSResources = @(
-    "/Private/Add-HexStreamEncapsulation.ps1",
-    "/Private/Assert-BMSMessage.ps1",
-    "/Private/Build-BMSMessage.ps1",
-    "/Private/Get-CRC16.ps1",
-    "/Private/Invoke-CMDPreProcessor.ps1",
-    "/Private/Parse-BMSMessage.ps1",
-    "/Private/Send-BMSMessage.ps1",
-    "/Private/Verify-MessageCRC.ps1",
-    "/Public/Get-BMSInstructionList.ps1",
-    "/Public/Get-BMSLibraryInstance.ps1",
-    "/Public/Get-BMSParameter.ps1",
-    "/Public/Set-BMSParameter.ps1"
+    "./Private/Add-HexStreamEncapsulation.ps1",
+    "./Private/Assert-BMSMessage.ps1",
+    "./Private/Build-BMSMessage.ps1",
+    "./Private/Get-CRC16.ps1",
+    "./Private/Invoke-CMDPreProcessor.ps1",
+    "./Private/Convert-BMSMessage.ps1",
+    "./Private/Send-BMSMessage.ps1",
+    "./Private/Test-MessageCRC.ps1",
+    "./Public/Get-BMSInstructionList.ps1",
+    "./Public/Get-BMSLibraryInstance.ps1",
+    "./Public/Get-BMSParameter.ps1",
+    "./Public/Set-BMSParameter.ps1"
 )
 
 ForEach ($resource in $RECBMSResources) {
