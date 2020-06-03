@@ -1,5 +1,6 @@
 ![REC-BMS](https://github.com/aaronsb/REC-BMSManager/raw/master/images/rec-logo.png)
-# REC-BMSManager: Console management tools for REC-BMS 1Q battery management systems.
+# REC-BMSManager
+# Console management tools for REC-BMS 1Q battery management systems.
 Powershell based management for REC-BMS battery management
 
 # What Is This?
