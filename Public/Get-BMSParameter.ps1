@@ -76,7 +76,7 @@ Function Get-BMSParameter {
             else {
                 ForEach ($iOInstance in $Data)
                 {
-                    Return ($iOInstance.BMSData.0).PSObject.Copy()
+                    ($iOInstance.BMSData.0).PSObject.Copy()
                     if ($iOInstance.BMSData.1) {
                         ($iOInstance.BMSData.1).PSObject.Copy()
                     }
