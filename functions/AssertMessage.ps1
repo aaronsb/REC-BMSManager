@@ -114,28 +114,40 @@ Function Assert-BMSMessage {
                         $thisTypeValid = $false
                         switch ($Book.Return.Value) {
                             "float" {
-                                if ($Command.$Key -as [float]) {
-                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is float")
+                                if ($Command.$Key -is [double]) {
+                                    Write-Verbose ("[MsgAssert]: [" + ("{0:N}" -f $Command.$Key) + "]: Value Is float")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
-                                    [System.BitConverter]::GetBytes([float]$Command.$Key) | %{"{0:x2}" -f $_} | %{$HexEncodedInstruction.Add($_)}
+                                    if ($thisMinMax -eq $false) {
+                                        Write-Warning "[MsgAssert]: Instruction value is out of bounds"
+                                        break
+                                    }
+                                    else {
+                                        $Key.ToUpper().ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                        ([string]$Command.$Key).ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    }
+
                                 }
                                 else {
                                     Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT float")
                                 }
                             }
                             "int" {
-                                if (($Command.$Key -as [int]) -or ($Command.$Key -eq 0)) {
-                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is int")
+                                if (($Command.$Key -is [int]) -or ($Command.$Key -eq 0)) {
+                                    Write-Verbose ("[MsgAssert]: [" + ("{0:N}" -f $Command.$Key) + "]: Value Is int")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
-                                    #if a value is actually stored as a float, it will be rounded to nearest int
-                                    #but display as int in the non encoded key value
-                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
-                                    [int]$Command.$Key | %{"{0:x2}" -f [int16]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    if ($thisMinMax -eq $false) {
+                                        Write-Warning "[MsgAssert]: Instruction value is out of bounds"
+                                        break
+                                    }
+                                    else {
+                                        $Key.ToUpper().ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                        ([string]$Command.$Key).ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    }
+
                                 }
                                 else {
                                     Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT int")
@@ -159,7 +171,7 @@ Function Assert-BMSMessage {
                                 }
                             }
                             "char" {
-                                if ($Command.$Key -as [char]) {
+                                if ($Command.$Key -is [char]) {
                                     Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is char")
                                     $thisTypeValid = $true
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
