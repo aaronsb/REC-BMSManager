@@ -28,7 +28,7 @@ Function Get-BMSInstructionList {
             Array {$Selection = $global:BMSInstructionSet.Command | ?{$_.Handler -match "Array"}}
             Range {$Selection = $global:BMSInstructionSet.Command | ?{$_.Handler -match "Range"}}
             Configurable {$selection = $global:BMSInstructionSet.Command | ?{$_.ReadOnly -eq $false}}
-            Common {$global:BMSInstructionSet.Command | ?{$_.Common -eq $true}}
+            Common {$Selection = $global:BMSInstructionSet.Command | ?{$_.Common -eq $true}}
             
             Default {
                 $Selection = $global:BMSInstructionSet.Command
