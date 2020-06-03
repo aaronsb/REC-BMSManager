@@ -56,10 +56,12 @@ You can change the Port Name by setting the variable:
 ## Getting data from the BMS
 ```Get-BMSParameter``` gets parameters from the BMS. You can add them as a list, or just issue a single command. Depending on the mood of your BMS (aka, it's busy and not dealing with interrupts), it might not reply and take a bit of time to return the data.
 
-![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-examples.gif)
+![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-example.gif)
 
 ## Sending data to the BMS
 ```Set-BMSParameter``` is the command to set parameters that are setable. One value per instruction. All instructions are validated against library min and max values.
+
+![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/set-example.gif)
 
 ## Listing Available Instructions
 ```Get-BMSInstructionList``` is a command reference based on the technical installation manual from REC. There are various arguments to filter different commands. The table has a brief explaination of what the instructions mean.
@@ -75,7 +77,7 @@ The intention of this set of management functions is as follows:
 - [x] Use byte format internally with messaging
 - [x] Build functions as a module
 - [ ] Write Pester tests to ensure things are working right on future releases
-- [ ] Figure out instructions to perform writes to module
+- [x] Figure out instructions to perform writes to module
 - [ ] Write function get-help blocks for additional documentation.
 
 
