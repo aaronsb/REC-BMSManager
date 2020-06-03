@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-# RootModule = 'REC-BMSManager.psm1'
+RootModule = './Private/REC-BMSManager.psm1'
 
 # Version number of this module.
 ModuleVersion = '0.9.0'
