@@ -1,5 +1,5 @@
 #manifest
-
+<#
 # Preprocessor for determining instruction type input and constructing a valid message
 . .\Private\CMDPreProcessor.ps1
 
@@ -24,6 +24,6 @@
 # Helper functions for simplified UX and presentation
 . .\Public\HelperFunctions.ps1
 
-
+#>
 #instance a library global
 $global:BMSInstructionSet = Get-BMSLibraryInstance
