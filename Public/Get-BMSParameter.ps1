@@ -76,9 +76,31 @@ Function Get-BMSParameter {
             else {
                 ForEach ($iOInstance in $Data)
                 {
-                    ($iOInstance.BMSData.0).PSObject.Copy()
-                    if ($iOInstance.BMSData.1) {
-                        ($iOInstance.BMSData.1).PSObject.Copy()
+                    if ($BMSInstructionSet.Config.Battery.MultiBMS -eq $false) {
+                        #the header data only makes sense for multi-module installations
+                        #each REC-BMS 1Q has 16 balance lines, and additional children can be connected for "Very Large Batteries"
+                        #therefore multiple arrays of data are possibly returned, and need identifiers to know which module
+                        #the values come from.
+                        #I haven't tested this due to a lack of a "Very Large Battery" :(
+
+                        #logic is: multibms is false, and a multipart header is found, only assert/emit the second part of the multipart data
+                        if ($iOInstance.BMSData.1) {
+                            ($iOInstance.BMSData.1).PSObject.Copy()
+                        }
+                        else {
+                            #if a second part isn't found, then only assert/emit the first part (this would be a single range value return)
+                            ($iOInstance.BMSData.0).PSObject.Copy()
+                        }
+                    }
+                    else {
+                        #if multipart is true, give all the things possible
+                        if ($iOInstance.BMSData.1) {
+                            ($iOInstance.BMSData.0).PSObject.Copy()
+                            ($iOInstance.BMSData.1).PSObject.Copy()
+                        }
+                        else {
+                            ($iOInstance.BMSData.0).PSObject.Copy()
+                        }
                     }
                 }
 
