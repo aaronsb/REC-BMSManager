@@ -1,0 +1,48 @@
+TOPIC
+    about_REC-BMSManager
+
+SHORT DESCRIPTION
+    A command instruction set interpeter for managing REC-BMS 1Q battery management modules.
+    This module is cross compatible on Powershell Core, so it should run fine on Linux environments.
+
+LONG DESCRIPTION
+    Long description goes here.
+
+EXAMPLES
+    PS C:\> Get-BMSParameter -Instruction *IDN
+
+    Description    Value              Unit
+    -----------    -----              ----
+    Identification REC BMS 1Q VICTRON Description
+
+    PS /home/aaron/> Get-BMSParameter -Instruction CELL
+
+    Description          Value Unit                                                                                            -----------          ----- ----                                                                                            Number of BMS Units      1 UnitCount
+    Cell: [1]            3.972 Volt
+    Cell: [2]           3.9721 Volt
+    Cell: [3]           3.9696 Volt
+    Cell: [4]           3.9693 Volt
+    Cell: [5]            3.967 Volt
+    Cell: [6]           3.9725 Volt
+    Cell: [7]           3.9734 Volt
+    Cell: [8]           3.9757 Volt
+    Cell: [9]           3.9708 Volt
+    Cell: [10]          3.9699 Volt
+    Cell: [11]          3.9682 Volt
+    Cell: [12]          3.9701 Volt
+    Cell: [13]          3.9716 Volt
+    Cell: [14]          3.9733 Volt
+
+NOTE:
+    Thank you to Tine Andrejasic (tine@rec-bms.com) for patiently
+    answering my questions about serial communication with REC-BMS
+    and RS-485 communication formatting.
+
+TROUBLESHOOTING NOTE:
+    Look out on the Github repository for issues and new releases.
+
+SEE ALSO
+  - https://github.com/aaronsb/ps-recbms
+
+KEYWORDS
+      REC-BMS, RECBMS, Battery, Management
