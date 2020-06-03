@@ -79,18 +79,6 @@ Function Convert-BMSMessage
                     $i++
                 } until ($i -gt ($ByteStream.Count / $SegmentOffset))
             }
-            
-        
-            
-            
-            #saving this example for later: [BitConverter]::ToSingle([BitConverter]::GetBytes(0xc71e596b),0)
-            #https://www.reddit.com/r/PowerShell/comments/bayfhx/hex_to_decimal/
-        
-            #also this one
-            #$hexInput = 0x3FA8FE3B
-        
-            #$bytes = ([Net.IPAddress]$hexInput).GetAddressBytes()
-            #$numericValue = [BitConverter]::ToSingle($bytes, 0)
         }
         Function LabelHeaderValues {
             [CmdletBinding()]
@@ -190,9 +178,6 @@ Function Convert-BMSMessage
                 $Data += [PSCustomObject]$Row
                 $i++
             } until ($i -gt ($Descriptor.Count -1))
-           
-
-            
             Return ($Data)
         }
 
@@ -201,9 +186,10 @@ Function Convert-BMSMessage
         foreach ($iOInstance in $iO) {
             Write-Verbose ("[Parser]: Instruction Decoding Handler: [" + $iOInstance.Instruction.Return.Value + "]")
             Write-Verbose ("[Parser]: Instruction Description: [" + $iOInstance.Instruction.Alias + "]")
-
+            Write-Verbose ([char][Convert]::ToInt16($BMSInstructionSet.Config.Message.Components.QRY,16) )
             #assert value type when the instruction was setting a parameter instead of reading a parameter
-            if ([char][Convert]::ToInt16($BMSInstructionSet.Config.Message.Components.QRY,16) -ne $iO.Plain) {
+            if ([char][Convert]::ToInt16($BMSInstructionSet.Config.Message.Components.QRY,16) -ne $iOInstance.Plain) {
+                Write-Verbose ("[Parser]: Instruction Is Configuration Type: []")
                 $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
                 ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
             }
@@ -223,6 +209,12 @@ Function Convert-BMSMessage
                     char {
                         $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
                         ($BMSData.0).Value = [char](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+                        
+                        #special fixes for single ranged char data types
+                        if ($iOInstance.Command -eq "CHEM") {
+                            $id = ($BMSData.0).Value
+                            ($BMSData.0).Description = ("Chemistry: [" + $BMSInstructionSet.Config.Battery.ChemistryTypes.($id) + "]")
+                        }
                     }
                 
                     int  {
@@ -232,7 +224,7 @@ Function Convert-BMSMessage
                     }
                 
                     array  {
-                        # each type of array has two parts (hex stream messages):
+                        # each type of array has two parts:
                         # first part is some sort of metadata about the BMS ID, or number of instructions/values expected
                         # there is some inconsistency in the first value, so handler cases are necessary for this.
                         #
@@ -241,10 +233,14 @@ Function Convert-BMSMessage
                         #
                         # the second part is the value array, which can be dynamic from a single value (like BMS controller temperature),
                         # to several values such as error reporting, to many values, such as cell voltages
+
+                        #$BMSData = [PSCustomObject]@{"1"=(LabelDataArrayValues $iOInstance)}
+                        
                         $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance);"1"=(LabelDataArrayValues $iOInstance)}
                         
-                        #special fix/hack for LCD3, which packs a value in individual LSB-MSB values 
+                        #special fix/hacks for array data types
                         if ($iOInstance.Command -eq "LCD3") {
+                            #this datatype is an AmpHour mesaurement, which packs a value in individual LSB-MSB values 
                             $Ah = [bitconverter]::ToInt16(($BMSData.1)[7..8].value,0)
                             $BMSData.1 = ($BMSData.1)[0..5]
                             $BMSData.1 += [PSCustomObject]@{
@@ -271,15 +267,15 @@ Function Convert-BMSMessage
                 Write-Verbose ("[Parser]: Values continue: [" + (($BMSData.1).Count -1) + "] more in data")
             }
             else {
-                Write-Verbose ("[Parser]" + ($BMSData.0).Description)
-                Write-Verbose ("[Parser]" + ($BMSData.0).Unit)
-                Write-Verbose ("[Parser]" + ($BMSData.0).Value)
+                Write-Verbose ("[Parser]: " + ($BMSData.0).Description)
+                Write-Verbose ("[Parser]: " + ($BMSData.0).Unit)
+                Write-Verbose ("[Parser]: " + ($BMSData.0).Value)
             }
     
             $iOInstance | Add-Member -MemberType NoteProperty -Name BMSData -Value $BMSData
-            
+            $iOInstance
         }
-        return $iO.PSObject.Copy()
+        
     }
 }
 
