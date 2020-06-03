@@ -59,7 +59,7 @@ Function Get-BMSParameter {
                 catch [System.Management.Automation.MethodInvocationException] {
                     $port.BaseStream.Dispose()
                     Remove-Variable port -Scope Global
-                    Write-Warning "Retrying $r"
+                    #Write-Warning "Retrying $r"
                 }    
                 $r++
             }
