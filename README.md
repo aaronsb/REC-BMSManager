@@ -59,7 +59,7 @@ You can change the Port Name by setting the variable:
 ![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-examples.gif)
 
 ## Sending data to the BMS
-```Set-BMSParameter``` is the command to set parameters that are setable. Currently it doesn't work because I think I'm missing a key instruction for unlocking the BMS to modification commands.
+```Set-BMSParameter``` is the command to set parameters that are setable. One value per instruction. All instructions are validated against library min and max values.
 
 ## Listing Available Instructions
 ```Get-BMSInstructionList``` is a command reference based on the technical installation manual from REC. There are various arguments to filter different commands. The table has a brief explaination of what the instructions mean.
