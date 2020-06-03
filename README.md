@@ -3,7 +3,7 @@
 # Console management tools for REC-BMS 1Q battery management systems.
 Powershell based management for REC-BMS battery management modules. Built and designed by [Rec-BMS](http://rec-bms.com/), these modules are chainable as a parent-> multi child BMS system in harsh conditions. They are very robust.
 
-![REC-BMS](https://github.com/aaronsb/REC-BMSManager/raw/master/images/rec-logo.png)
+![REC-BMS](https://github.com/aaronsb/REC-BMSManager/raw/master/images/bmsmodule.png)
 
 # What Is This?
 * Check out the screenshots down below.👇👇
