@@ -28,7 +28,8 @@ You'll need to configure your serial port. If you use the cable that comes from 
 
 For example, ```$BMSInstructionSet.Config.Client``` returns the parameters:
 
-    ```❯ $BMSInstructionSet.Config.Client
+    
+    ❯ $BMSInstructionSet.Config.Client
 
       PortName     : /dev/ttyUSB0
       BaudRate     : 38400
@@ -40,9 +41,10 @@ For example, ```$BMSInstructionSet.Config.Client``` returns the parameters:
       DTREnable    : True
       ```
 You can change the Port Name by setting the variable:
-    ```❯ $BMSInstructionSet.Config.Client.PortName = "COM6"
+    ❯ $BMSInstructionSet.Config.Client.PortName = "COM6"
+    
     ❯ $BMSInstructionSet.Config.Client.BaudRate = "56000"
-    ```
+    
 
 # Using The Console Tools
 
