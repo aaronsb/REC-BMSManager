@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = './Private/REC-BMSManager.psm1'
+RootModule = 'REC-BMSManager.psm1'
 
 # Version number of this module.
 ModuleVersion = '0.9.0'
@@ -69,7 +69,12 @@ Copyright = '(c) Aaron Bockelie. All rights reserved.'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @("Get-BMSParameter","Set-BMSParameter","Get-BMSInstructionList")
+FunctionsToExport = @(
+    "Get-BMSParameter",
+    "Set-BMSParameter",
+    "Get-BMSInstructionList",
+    "Get-BMSLibraryInstance"
+)
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()

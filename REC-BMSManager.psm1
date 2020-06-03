@@ -1,29 +1,34 @@
-#manifest
+
 <#
-# Preprocessor for determining instruction type input and constructing a valid message
-. .\Private\CMDPreProcessor.ps1
-
-# Instruction message assertion code, generates valid query data structures
-. .\Private\AssertMessage.ps1
-
-# CRC functions for signing byte data streams
-. .\Private\CRC16.ps1
-
-# Instruction message builder to suit instruction command structure syntax
-. .\Private\BuildMessage.ps1
-
-# Serial communication functions for sending and receieving instructions and telemetry
-. .\Private\SendMessage.ps1
-
-# Message parser for converting instruction response bytestreams into value streams
-. .\Private\ParseMessage.ps1
-
-# Stream processor functions for intermediary and final data presentation
-. .\Private\MessageStream.ps1
-
-# Helper functions for simplified UX and presentation
-. .\Public\HelperFunctions.ps1
-
+    Preprocessor for determining instruction type input and constructing a valid message
+    Instruction message assertion code, generates valid query data structures
+    CRC functions for signing byte data streams
+    Instruction message builder to suit instruction command structure syntax
+    Serial communication functions for sending and receieving instructions and telemetry
+    Message parser for converting instruction response bytestreams into value streams
+    Stream processor functions for intermediary and final data presentation
+    Helper functions for simplified UX and presentation
 #>
+
+
+$RECBMSResources = @(
+    "/Private/Add-HexStreamEncapsulation.ps1",
+    "/Private/Assert-BMSMessage.ps1",
+    "/Private/Build-BMSMessage.ps1",
+    "/Private/Get-CRC16.ps1",
+    "/Private/Invoke-CMDPreProcessor.ps1",
+    "/Private/Parse-BMSMessage.ps1",
+    "/Private/Send-BMSMessage.ps1",
+    "/Private/Verify-MessageCRC.ps1",
+    "/Public/Get-BMSInstructionList.ps1",
+    "/Public/Get-BMSLibraryInstance.ps1",
+    "/Public/Get-BMSParameter.ps1",
+    "/Public/Set-BMSParameter.ps1"
+)
+
+ForEach ($resource in $RECBMSResources) {
+. (Join-Path -Path $PSScriptRoot -ChildPath $resource)
+}
+
 #instance a library global
 $global:BMSInstructionSet = Get-BMSLibraryInstance
