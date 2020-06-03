@@ -3,15 +3,16 @@
         {
             "Battery": {
                 "CellCount": 14,
-                "MultiBMS": false
+                "MultiBMS": false,
+                "ChemistryTypes": {
+                    "1": "Li-po Kokam High power",
+                    "2": "Li-po Kokam High capacity",
+                    "3": "LiFePO4 Winston",
+                    "4": "LiFePO4 A123",
+                    "5": "LiMnO2"
+                }
             },
-            "ChemistryTypes": {
-                "Li-po Kokam High power": 1,
-                "Li-po Kokam High capacity": 2,
-                "LiFePO4 Winston": 3,
-                "LiFePO4 A123": 4,
-                "LiMnO2": 5
-            },
+            
             "Client": {
                 "PortName": "/dev/ttyUSB0",
                 "BaudRate": 38400,
@@ -764,7 +765,7 @@
             "Alias": "Chemistry",
             "Instruction": "CHEM",
             "Name": "Li-ion chemistry",
-            "Description": "Li-ion chemistry",
+            "Description": "Chemistry type changes BMS algorithm",
             "Common": true,
             "ReadOnly": false,
             "Range": {
@@ -773,7 +774,7 @@
             },
             "Value": "char",
             "Return": {
-                "Description": "chemistry selection via lookup",
+                "Description": "Battery Chemistry Type",
                 "Unit": "identity",
                 "Value": "char"
             },
