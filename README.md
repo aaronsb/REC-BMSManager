@@ -85,17 +85,6 @@ Future plans:
 * Since I use Home Assistant, I am planning on building a docker container that turns this module into a sensor platform. This way, it easily becomes integrated with long term metrics and telemetry.
 
 
-List of public function conversation flow:
-
-  Get-BMSParameter
-  Set-BMSParameter
-  Get-BMSInstructionList
-  Get-BMSLibraryInstance
-
-
-Assert -> Build -> Send -> Parse -> Decode -> Present
-
-
 ![Getting BMS Parameters](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-parameters.gif)
 
 ![Functions have extra verbosity!](https://github.com/aaronsb/REC-BMSManager/blob/master/images/get-bmsparameters-verbose.gif)
