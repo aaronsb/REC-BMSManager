@@ -64,19 +64,25 @@ Function Get-BMSParameter {
                 $r++
             }
             until ($r -eq $BMSInstructionSet.Config.Session.Retries)
-                if ($Extra) {
-                    $Data.PSObject.Copy()
-                    break
-                }
-                else {
-                    ForEach ($iOInstance in $Data)
-                    {
-                        ($iOInstance.BMSData.0).PSObject.Copy()
-                        if ($iOInstance.BMSData.1) {
-                            ($iOInstance.BMSData.1).PSObject.Copy()
-                        }
-                    }
 
+
+        }
+
+        end {
+            if ($Extra) {
+                return $Data.PSObject.Copy()
+                break
+            }
+            else {
+                ForEach ($iOInstance in $Data)
+                {
+                    Return ($iOInstance.BMSData.0).PSObject.Copy()
+                    if ($iOInstance.BMSData.1) {
+                        ($iOInstance.BMSData.1).PSObject.Copy()
+                    }
                 }
+
+            }
+
         }
 }

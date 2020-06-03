@@ -201,59 +201,69 @@ Function Convert-BMSMessage
         foreach ($iOInstance in $iO) {
             Write-Verbose ("[Parser]: Instruction Decoding Handler: [" + $iOInstance.Instruction.Return.Value + "]")
             Write-Verbose ("[Parser]: Instruction Description: [" + $iOInstance.Instruction.Alias + "]")
-            switch ($iOInstance.Instruction.Return.Value) {
-                string {
-                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
-                    ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
-                }
-            
-                float {
-                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
-                    #Single value returns from BMS come back as chars, which we then cast into float.
-                    ($BMSData.0).Value =  ("{0:N}" -f [float](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
-                }
-            
-                char {
-                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
-                    ($BMSData.0).Value = [char](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
-                }
-            
-                int  {
-                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
-                    #Single value returns from BMS come back as chars, we cast these into formatted int
-                    ($BMSData.0).Value = ("{0:D0}" -f [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
-                }
-            
-                array  {
-                    # each type of array has two parts (hex stream messages):
-                    # first part is some sort of metadata about the BMS ID, or number of instructions/values expected
-                    # there is some inconsistency in the first value, so handler cases are necessary for this.
-                    #
-                    # because there isn't an expectation of this structure to change very much, there isn't any type of function recursion
-                    # for managing these use cases.
-                    #
-                    # the second part is the value array, which can be dynamic from a single value (like BMS controller temperature),
-                    # to several values such as error reporting, to many values, such as cell voltages
-                    $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance);"1"=(LabelDataArrayValues $iOInstance)}
-                    
-                    #special fix/hack for LCD3, which packs a value in individual LSB-MSB values 
-                    if ($iOInstance.Command -eq "LCD3") {
-                        $Ah = [bitconverter]::ToInt16(($BMSData.1)[7..8].value,0)
-                        $BMSData.1 = ($BMSData.1)[0..5]
-                        $BMSData.1 += [PSCustomObject]@{
-                            "Unit" = "Ah";
-                            "Value" = $Ah;
-                            "Description" = "Amp Hours since last charge"
+
+            #assert value type when the instruction was setting a parameter instead of reading a parameter
+            if ([char][Convert]::ToInt16($BMSInstructionSet.Config.Message.Components.QRY,16) -ne $iO.Plain) {
+                $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+            }
+            else {
+                switch ($iOInstance.Instruction.Return.Value) {
+                    string {
+                        $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                        ($BMSData.0).Value = [string](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+                    }
+                
+                    float {
+                        $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                        #Single value returns from BMS come back as chars, which we then cast into float.
+                        ($BMSData.0).Value =  [float]("{0:N}" -f [float](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
+                    }
+                
+                    char {
+                        $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                        ($BMSData.0).Value = [char](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+                    }
+                
+                    int  {
+                        $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance)}
+                        #Single value returns from BMS come back as chars, we cast these into formatted int
+                        ($BMSData.0).Value = [int]("{0:D0}" -f [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0]))
+                    }
+                
+                    array  {
+                        # each type of array has two parts (hex stream messages):
+                        # first part is some sort of metadata about the BMS ID, or number of instructions/values expected
+                        # there is some inconsistency in the first value, so handler cases are necessary for this.
+                        #
+                        # because there isn't an expectation of this structure to change very much, there isn't any type of function recursion
+                        # for managing these use cases.
+                        #
+                        # the second part is the value array, which can be dynamic from a single value (like BMS controller temperature),
+                        # to several values such as error reporting, to many values, such as cell voltages
+                        $BMSData = [PSCustomObject]@{"0"=(LabelHeaderValues $iOInstance);"1"=(LabelDataArrayValues $iOInstance)}
+                        
+                        #special fix/hack for LCD3, which packs a value in individual LSB-MSB values 
+                        if ($iOInstance.Command -eq "LCD3") {
+                            $Ah = [bitconverter]::ToInt16(($BMSData.1)[7..8].value,0)
+                            $BMSData.1 = ($BMSData.1)[0..5]
+                            $BMSData.1 += [PSCustomObject]@{
+                                "Unit" = "Ah";
+                                "Value" = $Ah;
+                                "Description" = "Amp Hours since last charge"
+                            }
                         }
                     }
-                }
-            
-                Default  {
-                    Write-Warning ("[Parser]: No handler for type [" + $iOInstance.Instruction.Return.Value + "]")
-                    break
-                }
                 
+                    Default  {
+                        Write-Warning ("[Parser]: No handler for type [" + $iOInstance.Instruction.Return.Value + "]")
+                        break
+                    }
+                    
+                }
             }
+
+
             if ($BMSData.1) {
                 Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Description)
                 Write-Verbose ("[Parser]: " + (($BMSData.1)[0]).Unit)

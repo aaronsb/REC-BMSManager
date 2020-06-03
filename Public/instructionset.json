@@ -2,7 +2,8 @@
     "Config": [
         {
             "Battery": {
-                "CellCount": 14
+                "CellCount": 14,
+                "MultiBMS": false
             },
             "ChemistryTypes": {
                 "Li-po Kokam High power": 1,
@@ -34,7 +35,7 @@
                     "LEN": "00",
                     "MSG": null,
                     "QRY": "3f",
-                    "CMD": " ",
+                    "CMD": "20",
                     "CRC": "0000",
                     "ETX": "aa"
                 },

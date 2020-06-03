@@ -12,7 +12,7 @@ Function Assert-BMSMessage {
         $InstructionStack = New-Object System.Collections.Generic.List[System.Object]
 
         #instance the library
-        $Library = $BMSInstructionSet.Command
+        $Library = $BMSInstructionSet.Command.PSObject.Copy()
 
         #define a private validation function
 
@@ -50,7 +50,7 @@ Function Assert-BMSMessage {
                 #Clear previous handler count
                 $HandlerCount = 0
 
-                $Book = ($Library | ?{$_.Instruction -eq $Key.ToUpper()})
+                $Book = ($Library | ?{$_.Instruction -eq $Key.ToUpper()}).PSObject.Copy()
                 if (!$Book) {
                     Write-Verbose ("[MsgAssert]: [" + $Key + ":" + $Command.$Key + "]: Instruction is Unknown")
                     #throw the book?
@@ -66,9 +66,6 @@ Function Assert-BMSMessage {
                 
                 switch ($Book.Return.Value) {
                     Array {
-                        $HandlerCount = $HandlerCount + ($Book.Return.Unit.Array.Part | Sort-Object -Unique).Count
-                    }
-                    IntArray {
                         $HandlerCount = $HandlerCount + ($Book.Return.Unit.Array.Part | Sort-Object -Unique).Count
                     }
                     Default {
@@ -117,14 +114,20 @@ Function Assert-BMSMessage {
                                 if ($Command.$Key -is [double]) {
                                     Write-Verbose ("[MsgAssert]: [" + ("{0:N}" -f $Command.$Key) + "]: Value Is float")
                                     $thisTypeValid = $true
+                                    #create new array holding hex values for instruction
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
+                                    #validate min and max of this value
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
                                     if ($thisMinMax -eq $false) {
                                         Write-Warning "[MsgAssert]: Instruction value is out of bounds"
                                         break
                                     }
                                     else {
+                                        #add instruction as hex values to array
                                         $Key.ToUpper().ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                        #since this is an insruction not a query, add a space (thanks Tine!)
+                                        [Convert]::ToInt16($BMSInstructionSet.Config.Message.Components.CMD,16) | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                        #add the value as chars (regardless of it's original type) to the array
                                         ([string]$Command.$Key).ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     }
 
@@ -145,6 +148,7 @@ Function Assert-BMSMessage {
                                     }
                                     else {
                                         $Key.ToUpper().ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                        $BMSInstructionSet.Config.Message.Components.CMD | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                         ([string]$Command.$Key).ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     }
 
@@ -177,25 +181,8 @@ Function Assert-BMSMessage {
                                     $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
                                     $thisMinMax = MinMaxValidate -instructionValue $Command.$Key -Book $Book
                                     $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    $BMSInstructionSet.Config.Message.Components.CMD | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                     [char]$Command.$Key | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
-                                }
-                                else {
-                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT char")
-                                }
-                            }
-                            "string" {
-                                if ($Command.$Key -is [string]) {
-                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is char")
-                                    $thisTypeValid = $true
-                                    $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
-                                    if ($String.Length -le 10) {
-                                        $thisTypeValid = $true
-                                        $thisMinMax.Max = $true
-                                        $thisMinMax.Min = $true
-                                    }
-                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
-                                    [char]$BMSInstructionSet.Config.Message.Components.CMD | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
-                                    $Command.$Key.ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
                                 }
                                 else {
                                     Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT char")
