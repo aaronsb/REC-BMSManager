@@ -183,6 +183,23 @@ Function Assert-BMSMessage {
                                     Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT char")
                                 }
                             }
+                            "string" {
+                                if ($Command.$Key -is [string]) {
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is char")
+                                    $thisTypeValid = $true
+                                    $HexEncodedInstruction = New-Object System.Collections.Generic.List[System.Object]
+                                    if ($String.Length -le 10) {
+                                        $thisTypeValid = $true
+                                        $thisMinMax.Max = $true
+                                        $thisMinMax.Min = $true
+                                    }
+                                    $Key.ToUpper().ToCharArray() | %{'{0:x2}' -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                    $Command.$Key.ToCharArray() | %{"{0:x2}" -f [int][char]$_} | %{$HexEncodedInstruction.Add($_)}
+                                }
+                                else {
+                                    Write-Verbose ("[MsgAssert]: [" + $Command.$Key + "]: Value Is NOT char")
+                                }
+                            }
                             Default {
                                 Write-Verbose ("[MsgAssert]: [" + $Book.Return.Value + "]: No handler for this value type")
                                 Write-Error ("[MsgAssert]: [" + $Book.Return.Value + "]: No handler for this value type. Verify Dictionary data.")
