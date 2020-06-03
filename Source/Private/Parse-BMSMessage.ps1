@@ -1,128 +1,3 @@
-
-Function Get-BMSCharsFromByteStream {
-    [CmdletBinding()]
-    param($Bytes)
-    $L = ([int]$Bytes[3] + 3)
-    (($Bytes[4..$L]) | ForEach-Object{[char]$_}) -join ""
-}
-
-Function Get-BMSIntMixedBytesFromByteStream {
-    [CmdletBinding()]
-    param($Bytes)
-    $L = ([int]$Bytes[3] + 3)
-    ($Bytes[4..$L])
-}
-
-Function Get-BMSIntFromByteStream {
-    [CmdletBinding()]
-    param($String)
-    $L = ([int]$Bytes[3] + 3)
-    ($Bytes[4..$L]) | ForEach-Object{[int]$_}
-}
-
-Function Get-BMSBytesFromByteStream {
-    [CmdletBinding()]
-    param($Bytes)
-    #assign floating point byte array size
-    switch ($BMSInstructionSet.Config.Message.FloatPrecision) {
-        single {
-            #single signed float is 4 bytes long
-            $SegmentOffset = [int]4
-        }
-        Default {
-            throw ("Requested float precision " + $BMSInstructionSet.Config.Message.FloatPrecision + " is not available.")
-        }
-    }
-
-
-    #End offset length index -1 for array count, and -2 for crc and -1 for etx 
-    $Offset = ($Bytes.Length -4)
-
-    Write-Verbose ("[Parser]: Parsing float as [" + $SegmentOffset + "] Byte Arrays")
-    Write-Verbose ("[Parser]: Payload Length: [" + ($MessageStream.Count) + "]")
-
-    #Front offset is +1 
-    $ByteStream = $Bytes[4..($Offset)]
-    
-    if ($ByteStream.Count -eq $SegmentLength) {
-        [BitConverter]::ToSingle($ByteStream, 0)
-    }
-    else {
-
-        $i = 1
-        #Initalize byte stream counter
-        $LSB = 0
-        $MSB = ($SegmentOffset -1)
-        #initialize byte segment counter
-        $b = 1
-        #initialize first byte segment array based on FloatingPrecisionBits
-        #$ByteSegment = [byte[]]::new($SegmentLength)
-        do {
-            try {
-                [BitConverter]::ToSingle($ByteStream[$LSB..$MSB], 0)
-            }
-            catch {
-                Throw "Segment offset out of bounds!"
-            }
-            
-            $LSB+=$SegmentOffset
-            $MSB+=$SegmentOffset
-            $i++
-        } until ($i -gt ($ByteStream.Count / $SegmentOffset))
-    }
-    
-
-    
-    
-    #saving this example for later: [BitConverter]::ToSingle([BitConverter]::GetBytes(0xc71e596b),0)
-    #https://www.reddit.com/r/PowerShell/comments/bayfhx/hex_to_decimal/
-
-    #also this one
-    #$hexInput = 0x3FA8FE3B
-
-    #$bytes = ([Net.IPAddress]$hexInput).GetAddressBytes()
-    #$numericValue = [BitConverter]::ToSingle($bytes, 0)
-}
-
-
-Function Verify-MessageCRC {
-    [CmdletBinding()]
-    param($iOInstance)
-    $CRCStream = [ordered]@{}
-    $i=0
-        do {
-            #offset length index -1 for array count, and -2 for crc and -1 for etx 
-            $CRCOffset = ($iOInstance.ByteStreamReceive.ParsedStream[$i].Length -4)
-            #get bytes for crc calculation
-            $CRCTask = $iOInstance.ByteStreamReceive.ParsedStream[$i][1..($CRCOffset)]
-
-            #Old crc is two bytes before etx
-            $OldCRC = ($iOInstance.ByteStreamReceive.ParsedStream[$i][($CRCOffset +1)..($CRCOffset +2)] | ForEach-Object {"{0:x2}" -f $_}) -join ""
-
-            #recalculate crc
-            $NewCRC = Get-CRC16 -ByteData $CRCTask
-
-            #compare crc
-            Write-Verbose ("[CRC]: String to Compute: [" + $CRCTask + "]")
-            Write-Verbose ("[CRC]: Received CRC: [" + $OldCRC + "]")
-            Write-Verbose ("[CRC]: Computed CRC: [" + $NewCRC + "]")
-            if (!($NewCRC -eq $OldCRC)) {
-                    $CRCStream.Add($i,$false)
-                    Write-Error ("CRC DOES NOT MATCH. Expected: " + $OldCRC + "Computed: " + $NewCRC)
-                }
-                else {
-                    $CRCStream.Add($i,$true)
-                }
-            $i++
-    } 
-    until ($iOInstance.ByteStreamReceive.ParsedStream.Count -eq $i)
-
-    $iOInstance.ByteStreamReceive.Add("CRCStream",$CRCStream)
-    return $iOInstance
-    #compute/add CRC
-    #CRC-16 is calculated [in these bytes] <STX>[<DST><SND><LEN><MSG>[<QRY>]]<CRC><CRC><ETX>
-}
-
 Function Parse-BMSMessage
 {   
     [cmdletbinding()]
@@ -131,6 +6,91 @@ Function Parse-BMSMessage
         if (!$iO.ByteStreamReceive)
         {
             Throw "This Instruction Object does not contain received byte stream(s) to decode."
+        }
+
+        Function Get-BMSCharsFromByteStream {
+            [CmdletBinding()]
+            param($Bytes)
+            $L = ([int]$Bytes[3] + 3)
+            (($Bytes[4..$L]) | ForEach-Object{[char]$_}) -join ""
+        }
+        
+        Function Get-BMSIntMixedBytesFromByteStream {
+            [CmdletBinding()]
+            param($Bytes)
+            $L = ([int]$Bytes[3] + 3)
+            ($Bytes[4..$L])
+        }
+        
+        Function Get-BMSIntFromByteStream {
+            [CmdletBinding()]
+            param($String)
+            $L = ([int]$Bytes[3] + 3)
+            ($Bytes[4..$L]) | ForEach-Object{[int]$_}
+        }
+        
+        Function Get-BMSBytesFromByteStream {
+            [CmdletBinding()]
+            param($Bytes)
+            #assign floating point byte array size
+            switch ($BMSInstructionSet.Config.Message.FloatPrecision) {
+                single {
+                    #single signed float is 4 bytes long
+                    $SegmentOffset = [int]4
+                }
+                Default {
+                    throw ("Requested float precision " + $BMSInstructionSet.Config.Message.FloatPrecision + " is not available.")
+                }
+            }
+        
+        
+            #End offset length index -1 for array count, and -2 for crc and -1 for etx 
+            $Offset = ($Bytes.Length -4)
+        
+            Write-Verbose ("[Parser]: Parsing float as [" + $SegmentOffset + "] Byte Arrays")
+            Write-Verbose ("[Parser]: Payload Length: [" + ($MessageStream.Count) + "]")
+        
+            #Front offset is +1 
+            $ByteStream = $Bytes[4..($Offset)]
+            
+            if ($ByteStream.Count -eq $SegmentLength) {
+                [BitConverter]::ToSingle($ByteStream, 0)
+            }
+            else {
+        
+                $i = 1
+                #Initalize byte stream counter
+                $LSB = 0
+                $MSB = ($SegmentOffset -1)
+                #initialize byte segment counter
+                $b = 1
+                #initialize first byte segment array based on FloatingPrecisionBits
+                #$ByteSegment = [byte[]]::new($SegmentLength)
+                do {
+                    try {
+                        [BitConverter]::ToSingle($ByteStream[$LSB..$MSB], 0)
+                    }
+                    catch {
+                        Throw "Segment offset out of bounds!"
+                    }
+                    
+                    $LSB+=$SegmentOffset
+                    $MSB+=$SegmentOffset
+                    $i++
+                } until ($i -gt ($ByteStream.Count / $SegmentOffset))
+            }
+            
+        
+            
+            
+            #saving this example for later: [BitConverter]::ToSingle([BitConverter]::GetBytes(0xc71e596b),0)
+            #https://www.reddit.com/r/PowerShell/comments/bayfhx/hex_to_decimal/
+        
+            #also this one
+            #$hexInput = 0x3FA8FE3B
+        
+            #$bytes = ([Net.IPAddress]$hexInput).GetAddressBytes()
+            #$numericValue = [BitConverter]::ToSingle($bytes, 0)
         }
         Function LabelHeaderValues {
             [CmdletBinding()]
