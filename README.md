@@ -41,6 +41,7 @@ For example, ```$BMSInstructionSet.Config.Client``` returns the parameters:
       DTREnable    : True
       ```
 You can change the Port Name by setting the variable:
+
     ❯ $BMSInstructionSet.Config.Client.PortName = "COM6"
     
     ❯ $BMSInstructionSet.Config.Client.BaudRate = "56000"
