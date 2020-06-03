@@ -23,7 +23,6 @@ Future plans:
 List of public function conversation flow:
 
   Get-BMSParameter
-
   Set-BMSParameter
   Get-BMSInstructionList
   Get-BMSLibraryInstance
@@ -32,8 +31,6 @@ List of public function conversation flow:
 Assert -> Build -> Send -> Parse -> Decode -> Present
 
 
+![Getting BMS Parameters](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-parameters.gif)
 
-
-![Getting BMS Parameters](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/master/images/get-bmsparameters.gif)
-
-![Functions have extra verbosity!](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/master/images/get-parameters-verbose.gif)
+![Functions have extra verbosity!](https://github.com/aaronsb/REC-BMSManager/blob/master/images/get-bmsparameters-verbose.gif)
