@@ -10,10 +10,22 @@ Function Send-BMSMessage {
             }
 
             #REGION private function definitions
+
+            function Close-SerialPort {
+                [cmdletbinding()]
+                param()
+                #Write-Progress -id 30 -Activity '[Serial]:[Close]' -Status "Closing Port"
+                Write-Verbose ("[Serial]: Closing Port " + $port.PortName)
+                #dispose of port properly (I imagine dropping a piece of soggy cardboard into a wastebasket...plop)
+                $port.BaseStream.Dispose()
+                #dispose of port
+                Remove-Variable port -Scope Global
+            }
+
             function Open-SerialPort {
                 [cmdletbinding()]
                 param()
-                
+                #Write-Progress -id 30 -Activity '[Serial]:[Init]' -Status "Initialising Port"
                 #using System.IO.Ports.SerialPort.BaseStream method
                 #https://www.sparxeng.com/blog/software/must-use-net-system-io-ports-serialport
                 if (!$global:Port) {
@@ -22,8 +34,9 @@ Function Send-BMSMessage {
                     $global:Port = new-Object System.IO.Ports.SerialPort
                 }
                 else {
-                    Write-Warning ("Existing serial port instance found. Resetting")
+                    Write-Verbose ("[Serial]: Existing serial port instance found. Resetting")
                     $port.BaseStream.Dispose()
+                    Write-Verbose ("[Serial]: Waiting " + $BMSInstructionSet.Config.Session.SessionTimeout + " milliseconds for port restart")
                     Start-Sleep -Milliseconds $BMSInstructionSet.Config.Session.SessionTimeout
                     Remove-Variable port -Scope Global
                     $global:Port = new-Object System.IO.Ports.SerialPort
@@ -46,12 +59,14 @@ Function Send-BMSMessage {
                         Throw "Couldn't set a System.IO.Ports.SerialPort configurable from configuration metadata"
                     }
                 #ENDREGION serial setup
-
-                $r = 0
+                #Write-Progress -id 30 -Activity '[Serial]:[Open]' -Status "Opening Port"
+                $r = 1
                 do {
+                    
                     #open the port this session
                     try {
                         if (!$port.IsOpen) {
+                            #Write-Progress -id 30 -Activity '[Serial]:[Open]' -Status "Retry Port Open" -PercentComplete (($r / $BMSInstructionSet.Config.Session.Retries) * 100)
                             #Lazyish open of port
                             Write-Verbose ("[Serial]: Serial IsClosed(). Attempting to open.")
                             Start-Sleep -Milliseconds ($BMSInstructionSet.Config.Session.SessionTimeout * $r)
@@ -303,14 +318,19 @@ Function Send-BMSMessage {
             #REGION Main loop
 
             #Open the serial port
+            
+            #openserialport has it's own progress bars on id 30
             Open-SerialPort
 
             #zzz TODO add a loop to process multiple message send events
-
+            $ProgressStepNumber = 1
             foreach ($iOInstance in $iO) {
+                #Write-Progress -id 20 -Activity '[Serial]' -Status "Processing Instructions" -PercentComplete (($ProgressStepNumber / $iO.Count) * 100)
                 #start the timer for transmit event.
                 $Timer.Start()
                 #port should stay open for immediate receieve
+
+                #Write-Progress -id 40 -Activity '[Serial]:[Send]' -Status ("Sending Instruction: [" + $iOInstance.Command + "]")
                 Send-SerialBytes $iOInstance
 
                 #stop the timer for transmit event.
@@ -327,6 +347,7 @@ Function Send-BMSMessage {
                 $Timer.Start()
 
                 #Call read serial bytes
+                #Write-Progress -id 40 -Activity '[Serial]:[Receive]' -Status ("Getting Response: [" + $iOInstance.Command + "]")
                 $StreamObject = Read-SerialBytes
                 #return the message as a hash array
                 #next better version of this should be to define a custom class for this.
@@ -347,17 +368,14 @@ Function Send-BMSMessage {
                 #this error is a failure and can cause dependent calls to fall on their face
                 #if (unlikely) any good data comes out, crc check will provide some validation
                 Verify-MessageCRC $iOInstance | Out-Null
-                
-
+                #increment step number for progressbar
+                $ProgressStepNumber++
             }
             
         }
 
         end {
-            Write-Verbose ("[Serial]: Closing Port " + $port.PortName)
-            $port.BaseStream.Dispose()
-            #dispose of port
-            Remove-Variable port -Scope Global
+            Close-SerialPort
             return $iO
         }
         
