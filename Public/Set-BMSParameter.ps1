@@ -119,6 +119,6 @@ Function Set-BMSParameter {
     }
 
     end {
-        return $Result
+        return [PSCustomObject]$Result
     }
 }
