@@ -102,11 +102,11 @@ Function Convert-BMSMessage
                     switch ($Descriptor.Value) {
                         char {
                             #note that we just have a handler for char types, because bms appears to send segment 0 data types as ascii values that are cast to integers
-                            #$h = [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
+                            $h = [int](Get-BMSCharsFromByteStream $iOInstance.ByteStreamReceive.ParsedStream[0])
                             $Header = @{
-                                "Name" = $iOInstance.Instruction.Name;
-                                "Description" = $iOInstance.Instruction.Description;
-                                "Instruction" = $iOInstance.Instruction.Instruction
+                                "Unit" = $Descriptor.Unit;
+                                "Value" = $h;
+                                "Description" = $Descriptor.Description
                             }
                         }
                         Default {
@@ -181,7 +181,7 @@ Function Convert-BMSMessage
 
             $i = 0
             do {
-                #for each descriptor index, process the value 
+                #for each descriptor index, process the value
                 $Row = @{
                     "Description" = $Descriptor[($i+1)].Description;
                     "Value" = $Values[$i];
