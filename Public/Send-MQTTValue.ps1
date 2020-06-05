@@ -4,7 +4,7 @@ function Send-MQTTValue {
         [Parameter(Mandatory = $true)]$User,
         [System.Security.SecureString][Parameter(Mandatory=$true)]$Password,
         [Parameter(Mandatory = $true)]$Address,
-        $Port=1883)
+        $TCPPort=1883)
 
     #secured with a piece of tape. It's the thought that counts right?
     $PWD = ConvertFrom-SecureString -SecureString $Password -AsPlainText
@@ -18,7 +18,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         $topic = ("bus/battery/cell/volts/" + $i) 
-        $v.Value | mosquitto_pub -h $Address -p $Port -t $topic -u $User -P $PWD -l
+        $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
         $i++
     }
 
@@ -27,7 +27,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         $topic = ("bus/battery/cell/ohms/" + $i) 
-        $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $Port -t $topic -u $User -P $PWD -l
+        $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
         $i++
     }
 
@@ -37,7 +37,7 @@ function Send-MQTTValue {
     ForEach ($v in $Values) {
         $topicName = $v.Description -replace " ","_"
         $topic = ("bus/battery/status/" + $topicName) 
-        $v.Value | mosquitto_pub -h $Address -p $Port -t $topic -u $User -P $PWD -l
+        $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
     }
     
     $Values = $null
@@ -47,11 +47,11 @@ function Send-MQTTValue {
     ForEach ($v in $Values) {
         if ($v.Description -match "BMS") {
             $topic = "bus/battery/status/temperature/bms/1/"
-            $v.Value | mosquitto_pub -h $Address -p $Port -t $topic -u $User -P $PWD -l
+            $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
         }
         else {
             $topic = ("bus/battery/status/temperature/pack/" + $i)
-            $v.Value | mosquitto_pub -h $Address -p $Port -t $topic -u $User -P $PWD -l
+            $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
             $i++
         }
     }
