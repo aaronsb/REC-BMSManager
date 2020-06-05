@@ -24,6 +24,7 @@ $RECBMSResources = @(
     "./Public/Get-BMSLibraryInstance.ps1",
     "./Public/Get-BMSParameter.ps1",
     "./Public/Set-BMSParameter.ps1"
+    "./Public/Send-MQTTValue.ps1"
 )
 
 ForEach ($resource in $RECBMSResources) {

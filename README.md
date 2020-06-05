@@ -58,6 +58,12 @@ You can change the Port Name by setting the variable:
 
 ![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-example.gif)
 
+# MQTT Helper Script
+
+```Send-MQTT``` is something I'm working on to log BMS parameters long term. You'll need to supply credentials to it. The function also requires mosquitto_pub, which exists on Linux, but maybe not on Windows. Future improvements should make that more available on Windows. M2MQTT will probably be the answer to that.
+
+![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/MQTT.gif)
+
 ## Sending data to the BMS
 ```Set-BMSParameter``` is the command to set parameters that are setable. One value per instruction. All instructions are validated against library min and max values.
 
