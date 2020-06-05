@@ -85,13 +85,13 @@ The intention of this set of management functions is as follows:
 - [ ] Write Pester tests to ensure things are working right on future releases
 - [x] Figure out instructions to perform writes to module
 - [ ] Write function get-help blocks for additional documentation.
-
+- [ ] Add an MQTT exporter
 
 
 Current release notes:
 * REC-BMS 1Q is based on an Amtel AVR32 90CAN32 microcontroller
 * In order for me to get this to function in Linux, I requested REC-BMS to issue a special firmware that can communicate on 38400 BPS, because 56000 BPS (default) isn't a compatible BPS rate with FTDI USB Serial chipsets. If anyone knows how to make that rate work easily, please let me know!
-* Set-BMSParameter doesn't actually effect changes. The BMS returns ERROR1 - I am looking into that with REC-BMS, to see if perhaps there's a different instruction that is necessary to send on the port.
+
 
 Future plans:
 * Since I use Home Assistant, I am planning on building a docker container that turns this module into a sensor platform. This way, it easily becomes integrated with long term metrics and telemetry.
