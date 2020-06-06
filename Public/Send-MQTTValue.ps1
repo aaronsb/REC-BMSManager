@@ -17,7 +17,7 @@ function Send-MQTTValue {
     $Values = Get-BMSParameter CELL
     $i = 1
     ForEach ($v in $Values) {
-        $topic = ("bus/battery/cell/volts/" + $i) 
+        $topic = ("bus/battery/cell/" + $i + "/volts") 
         $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
         $i++
     }
@@ -26,7 +26,7 @@ function Send-MQTTValue {
     $Values = Get-BMSParameter RINT
     $i = 1
     ForEach ($v in $Values) {
-        $topic = ("bus/battery/cell/ohms/" + $i) 
+        $topic = ("bus/battery/cell/" + $i + "/ohms") 
         $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
         $i++
     }
@@ -46,7 +46,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         if ($v.Description -match "BMS") {
-            $topic = "bus/battery/status/temperature/bms/1/"
+            $topic = "bus/battery/status/temperature/bms/1"
             $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -l
         }
         else {
