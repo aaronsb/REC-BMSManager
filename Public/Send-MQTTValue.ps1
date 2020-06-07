@@ -18,7 +18,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         $topic = ("bus/battery/cell/" + $i + "/volts") 
-        $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -r -l
+        $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l
         $i++
     }
 
@@ -27,7 +27,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         $topic = ("bus/battery/cell/" + $i + "/ohms") 
-        $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -r -l
+        $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l
         $i++
     }
 
@@ -37,7 +37,7 @@ function Send-MQTTValue {
     ForEach ($v in $Values) {
         $topicName = $v.Description -replace " ","_"
         $topic = ("bus/battery/status/" + $topicName) 
-        $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -r -l
+        $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l
     }
     
     $Values = $null
@@ -47,11 +47,11 @@ function Send-MQTTValue {
     ForEach ($v in $Values) {
         if ($v.Description -match "BMS") {
             $topic = "bus/battery/status/temperature/bms/1"
-            $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -r -l
+            $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l
         }
         else {
             $topic = ("bus/battery/status/temperature/pack/" + $i)
-            $v.Value | mosquitto_pub -h $Address -p $TCPPort -t $topic -u $User -P $PWD -r -l
+            $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l
             $i++
         }
     }
