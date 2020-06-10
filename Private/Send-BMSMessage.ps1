@@ -149,7 +149,6 @@ Function Send-BMSMessage {
                 do {
                     #clear last data value before attempting another read
                     $Byte = $null
-                    $NullHeader = $false
 
                     if ($StreamComplete -eq $false) {
                         #cast these bytes to hex, which makes it easy to test for difference between 
@@ -160,7 +159,6 @@ Function Send-BMSMessage {
                         $Byte = $port.BaseStream.ReadByte()
                         
                         $Stream[$i] = $Byte
-                        #$NullHeader = $false
                         Write-Verbose ("[ReadByte]: Index: [" + $i + "]: Data:[" + ("{0:x2}" -f $Byte) + "]")
                     
 
