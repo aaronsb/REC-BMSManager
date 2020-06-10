@@ -134,6 +134,7 @@ Function Send-BMSMessage {
                 #there's probably some trickery to make this continuously window byte arrays into collections
                 #but I just don't really need it
                 #initalize byte index
+
                 $BufferSize = 512
                 $Stream = [System.Byte[]]::new($BufferSize)
                 $Indexes = [ordered]@{}
@@ -172,8 +173,7 @@ Function Send-BMSMessage {
                         break
                     }
 
-                    
-
+                
 
 
                     # behold my IF-THEN state machine. :)
@@ -193,7 +193,7 @@ Function Send-BMSMessage {
                         #7 bytes added to message length:
                         # 4 <STX><DST><SND><LEN> for message header
                         # 3 <CRC><CRC><ETX> for footer
-                        $firstIndexMessageLength = (([int]$Stream[$firstIndexLEN]) + 7)
+                        $firstIndexMessageLength = (([int][byte]$Stream[$firstIndexLEN]) + 7)
                         #message length, added to firststx (0) minus 1 to index $i from zero
                         #the point of this exercise is to maybe get to a point of understanding how this works
                         #so I can make an unlimited parser instead of a two message parser
@@ -233,7 +233,7 @@ Function Send-BMSMessage {
                     }
 
                     #REGION End of first message, but now there's a second
-                    if (($i -eq ($firstIndexETX +1)) -and ($Stream[$i] -eq $byteSTX)) {
+                    if (($Stream[$i] -eq $byteSTX) -and ($Stream[$i -1] -eq $byteETX)) {
                         Write-Verbose ("[MesgFlow]: Index: [" + $i + "]: Next message continues")
                         Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <STX> received: Data: [" + ("{0:x2}" -f $Stream[$i]) + "]")
                         # clearly, this is the start of the second message
