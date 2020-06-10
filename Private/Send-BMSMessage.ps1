@@ -134,8 +134,8 @@ Function Send-BMSMessage {
                 #there's probably some trickery to make this continuously window byte arrays into collections
                 #but I just don't really need it
                 #initalize byte index
-
-                $Stream = @()
+                $BufferSize = 512
+                $Stream = [System.Byte[]]::new($BufferSize)
                 $Indexes = [ordered]@{}
                 $StreamComplete = $false
                 $i = 0
@@ -144,11 +144,11 @@ Function Send-BMSMessage {
                 Write-Verbose ("--------------------------------------------------------------")
                 Write-Verbose ("|Mesg type|Pointer ID| Descriptor|    (Conditionally) Data   |")
                 Write-Verbose ("--------------------------------------------------------------")
-                Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <STX> Start Message Received")
                 $WatchDog.Start()
                 do {
                     #clear last data value before attempting another read
-                    $Data = $null
+                    $Byte = $null
+                    $NullHeader = $false
 
                     if ($StreamComplete -eq $false) {
                         #cast these bytes to hex, which makes it easy to test for difference between 
@@ -156,16 +156,15 @@ Function Send-BMSMessage {
                         #I had significant issues with this until I started using BaseStream method
                         #using System.IO.Ports.SerialPort.BaseStream method
                         #https://www.sparxeng.com/blog/software/must-use-net-system-io-ports-serialport
-                        $Data = "{0:x2}" -f $port.BaseStream.ReadByte() 
-                        #add retrieved byte to stream array
-                        if ($Data) {
-                            $Stream += [convert]::ToByte($Data, 16)
-                            Write-Verbose ("[ReadByte]: Index: [" + $i + "]: Data:[" + $data + "]")
-                            #add data onto the stack
-                        }
-                        else {
-                            Write-Verbose ("[" + $i + "]: No data found during port readbyte")
-                        }
+                        $Byte = $port.BaseStream.ReadByte()
+                        
+                        $Stream[$i] = $Byte
+                        #$NullHeader = $false
+                        Write-Verbose ("[ReadByte]: Index: [" + $i + "]: Data:[" + ("{0:x2}" -f $Byte) + "]")
+                    
+
+                        #Write-Verbose ("[" + $i + "]: Null header byte found during port readbyte")
+                        
                     }
                     else {
                         Write-Verbose "StreamComplete indicates true. Exiting serial read loop."
@@ -180,7 +179,7 @@ Function Send-BMSMessage {
                     # behold my IF-THEN state machine. :)
 
                     #REGION: First message start (STX) pointer logic
-                    if (($Stream[$i] -eq $byteSTX) -and ($i -eq 0)) {
+                    if (($Stream[$i] -eq $byteSTX) -and ($i -le 1)) {
                         Write-Verbose ("[CtrlByte]: Index: [" + $i + "]: <STX> Start Message Received")
                         #first byte of the stream. only occurs once.
                         #crossing this event with index 0 ensures we don't get a false start positive in the stream later.
@@ -285,11 +284,7 @@ Function Send-BMSMessage {
                             Throw "REC BMS messages only contain up to two messages in return stream."
                         }
                     }
-                    if ($data){
-
-                        $i++
-                    }
-
+                    $i++
                 } until ($WatchDog.ElapsedMilliseconds -ge $BMSInstructionSet.Config.Session.SessionTimeout)
                 #REGION close up shop and emit data
                 $WatchDog.Stop()
@@ -300,7 +295,7 @@ Function Send-BMSMessage {
                     $ParsedStream.Add("1",$Stream[$secondIndexSTX..$secondIndexETX])
                 }
                 
-                return @{"RawStream"=$Stream;"ParsedStream"=$ParsedStream}
+                return @{"RawStream"=$Stream[$firstIndexSTX..$secondIndexETX];"ParsedStream"=$ParsedStream}
             }
             #ENDREGION private function definitions
 
