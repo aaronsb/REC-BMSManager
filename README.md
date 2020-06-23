@@ -1,9 +1,9 @@
-![REC-BMS](https://github.com/aaronsb/REC-BMSManager/raw/master/images/rec-logo.png)
+![REC-BMS](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/rec-logo.png)
 # REC-BMSManager
 # Console management tools for REC-BMS 1Q battery management systems.
 Powershell based management for REC-BMS battery management modules. Built and designed by [Rec-BMS](http://rec-bms.com/), these modules are chainable as a parent-> multi child BMS system in harsh conditions. They are very robust.
 
-![REC-BMS](https://github.com/aaronsb/REC-BMSManager/raw/master/images/bmsmodule.png)
+![REC-BMS](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/bmsmodule.png)
 
 # What Is This?
 * Check out the screenshots down below.👇👇
@@ -56,23 +56,23 @@ You can change the Port Name by setting the variable:
 ## Getting data from the BMS
 ```Get-BMSParameter``` gets parameters from the BMS. You can add them as a list, or just issue a single command. Depending on the mood of your BMS (aka, it's busy and not dealing with interrupts), it might not reply and take a bit of time to return the data.
 
-![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-example.gif)
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/get-example.gif)
 
 # MQTT Helper Script
 
 ```Send-MQTT``` is something I'm working on to log BMS parameters long term. You'll need to supply credentials to it. The function also requires mosquitto_pub, which exists on Linux, but maybe not on Windows. Future improvements should make that more available on Windows. M2MQTT will probably be the answer to that.
 
-![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/MQTT.gif)
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/MQTT.gif)
 
 ## Sending data to the BMS
 ```Set-BMSParameter``` is the command to set parameters that are setable. One value per instruction. All instructions are validated against library min and max values.
 
-![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/set-example.gif)
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/set-example.gif)
 
 ## Listing Available Instructions
 ```Get-BMSInstructionList``` is a command reference based on the technical installation manual from REC. There are various arguments to filter different commands. The table has a brief explaination of what the instructions mean.
 
-![Example](https://github.com/aaronsb/REC-BMSManager/raw/master/images/instructionlist.gif)
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/instructionlist.gif)
 
 ## Diagnosing issues
 Try using ```-Verbose``` on any of the commands to get a full trace of what happens during execution. This might help you in diagnosing issues with communication or configuration.
@@ -97,6 +97,6 @@ Future plans:
 * Since I use Home Assistant, I am planning on building a docker container that turns this module into a sensor platform. This way, it easily becomes integrated with long term metrics and telemetry.
 
 
-![Getting BMS Parameters](https://github.com/aaronsb/REC-BMSManager/raw/master/images/get-parameters.gif)
+![Getting BMS Parameters](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/get-parameters.gif)
 
-![Functions have extra verbosity!](https://github.com/aaronsb/REC-BMSManager/blob/master/images/get-bmsparameters-verbose.gif)
+![Functions have extra verbosity!](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/get-bmsparameters-verbose.gif)
