@@ -85,7 +85,7 @@ The intention of this set of management functions is as follows:
 - [ ] Write Pester tests to ensure things are working right on future releases
 - [x] Figure out instructions to perform writes to module
 - [ ] Write function get-help blocks for additional documentation.
-- [ ] Add an MQTT exporter
+- [x] Add an MQTT exporter
 
 
 Current release notes:
