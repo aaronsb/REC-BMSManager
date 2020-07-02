@@ -56,7 +56,7 @@ Function Set-BMSParameter {
         ("---------------------------------- ")
         
         Write-Warning "Setting BMS parameters to incorrect values can permanently damage equipment! `r`nExceeding chemistry boundries can cause fire and explosion risk."
-        $confirmation = Read-Host -Prompt "Confirm the name of the instruction you are attempting to set and press [Enter]"
+        $confirmation = Read-Host -Prompt "Confirm the name of the instruction you are attempting to set and press [Enter]`r`nPressing [Enter] without confirmation word will abort."
         if ($Confirmation -cne $InstructionPair.Command) {
             Throw "Command not confirmed."
         }
