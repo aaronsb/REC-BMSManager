@@ -2,7 +2,7 @@ function Install-BMSMQTTService
 {
     switch ($PSVersionTable.Platform) {
         Unix {
-            if ((id -u) -eq 0) {
+            if ((id -u) -eq 1000) {
                 (gci $PSCommandPath).Directory
                 Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
             }
@@ -24,7 +24,7 @@ function Repair-BMSMQTTService
 {
     switch ($PSVersionTable.Platform) {
         Unix {
-            if ((id -u) -eq 0) {
+            if ((id -u) -eq 1000) {
                 Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
             }
             else {
@@ -45,7 +45,7 @@ function Uninstall-BMSMQTTService
 {
     switch ($PSVersionTable.Platform) {
         Unix {
-            if ((id -u) -eq 0) {
+            if ((id -u) -eq 1000) {
                 Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
             }
             else {
