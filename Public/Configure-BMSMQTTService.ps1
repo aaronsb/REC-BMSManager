@@ -3,7 +3,8 @@ function Install-BMSMQTTService
     switch ($PSVersionTable.Platform) {
         Unix {
             if ((id -u) -eq 0) {
-                Write-Host ($PSCommandPath)
+                (gci $PSCommandPath).Directory
+                Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
             }
             else {
                 Write-Error "This command requires SUDO privilages"
@@ -24,7 +25,7 @@ function Repair-BMSMQTTService
     switch ($PSVersionTable.Platform) {
         Unix {
             if ((id -u) -eq 0) {
-                Write-Host ($PSCommandPath)
+                Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
             }
             else {
                 Write-Error "This command requires SUDO privilages"
@@ -45,7 +46,7 @@ function Uninstall-BMSMQTTService
     switch ($PSVersionTable.Platform) {
         Unix {
             if ((id -u) -eq 0) {
-                Write-Host ($PSCommandPath)
+                Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
             }
             else {
                 Write-Error "This command requires SUDO privilages"
