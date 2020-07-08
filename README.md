@@ -26,6 +26,15 @@ There's no PS Gallery version of this (yet) so you'll need to install it manuall
 
 3. You'll need to import the module into your Powershell session. Enter the command ```Import-Module REC-BMSManager``` to load this module into your session. If you'd like that to be persistent, then edit your profile with ```nano $profile``` or ```notepad $profile```, and add the Import-Module command to load every time.
 
+# Advanced Installation
+This service has the ability to be installed as a systemd daemon and (eventually) a Windows service. The requirements for using this as a systemd service is basically the following:
+Make sure you can run the general commands as root. So like, "sudo -i" and then run. This means everything is in your user profile and auto loading the configuration directly.
+
+(To be updated later...)
+In a root session, you can use Install-BMSMQTTService to generate a configuration file for your MQTT broker and set it up as a service.
+Caution: I haven't written the uninstaller yet, but basically it drops a service unit file into /etc/systemd/system/recbmsmqtt.service, a conf file into /etc/opt/recbms/mqtt.conf, and an executable script into /usr/bin/recbmsmqtt. Deregister the service and delete them, and it's gone again. :)
+
+
 ## Configuring your installation
 
 You'll need to configure your serial port. If you use the cable that comes from REC, it's an rs-485 FTDI USB Serial device. Every time the module is loaded, the global environment variable ```$BMSInstructionSet``` is loaded. You can either set the configuration every time you want, or edit the _instructionset.json_ file in the module /Public resources directory.
@@ -82,6 +91,8 @@ The intention of this set of management functions is as follows:
 
 - [x] Use byte format internally with messaging
 - [x] Build functions as a module
+- [x] Write a systemd service installer
+- [ ] Write a windows service installer
 - [ ] Write Pester tests to ensure things are working right on future releases
 - [x] Figure out instructions to perform writes to module
 - [ ] Write function get-help blocks for additional documentation.
