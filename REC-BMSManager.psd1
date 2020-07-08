@@ -78,6 +78,7 @@ FunctionsToExport = @(
     "Install-BMSMQTTService",
     "Uninstall-BMSMQTTService",
     "Update-BMSMQttService",
+    "Use-BMSMQTTConfiguration",
     "Wait-Until"
 )
 
