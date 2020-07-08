@@ -44,11 +44,28 @@
             "MQTT": {
                 "Server": "server.domain.org",
                 "Port": 1883,
-                "Frequency": "0:0:0:60",
+                "Frequency": "0:0:0:30",
                 "TopicPrefix": "",
-                "Retain": "One",
+                "Retain": true,
                 "Username": "username",
-                "Password": "password"
+                "Password": "password",
+                "ServicePaths": {
+                    "Unix": {
+                        "ServiceName": "recbmsmqtt.service",
+                        "SystemdPath": "/etc/systemd/system/",
+                        "ExecutableName": "recbmsmqtt.sh",
+                        "ExecutablePath": "/usr/bin/",
+                        "ServiceConf": "bmsmqtt.conf",
+                        "ServiceConfPath": "/etc/opt/recbms/"
+                    },
+                    "Win32NT": {
+                        "ServiceName": "RECBMSMQTT",
+                        "ExecutableName": "recbmsmqtt.ps1",
+                        "ExecutablePath": "Program Files\\REC-BMSMQTTService\\",
+                        "ServiceConf": "RECBMSMQTTService",
+                        "ServiceConfPath": "hklm:Im\\Not\\Really\\Sure\\Yet"
+                    }
+                }
             }
         }
     ],
