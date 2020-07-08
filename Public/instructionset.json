@@ -53,7 +53,7 @@
                     "Unix": {
                         "ServiceName": "recbmsmqtt.service",
                         "SystemdPath": "/etc/systemd/system/",
-                        "ExecutableName": "recbmsmqtt.sh",
+                        "ExecutableName": "recbmsmqtt",
                         "ExecutablePath": "/usr/bin/",
                         "ServiceConf": "bmsmqtt.conf",
                         "ServiceConfPath": "/etc/opt/recbms/"
