@@ -4,7 +4,7 @@ Description=REC-BMS MQTT Messenger
 [Service]
 Type=simple
 Restart=always
-RestartSec=10
+RestartSec=6
 ExecStart=/usr/bin/recbmsmqtt
 StartLimitIntervalSec=0
 
