@@ -1,10 +1,16 @@
+function Use-BMSMQTTConfiguration {
+    
+}
+
+
+
 function Send-MQTTValue {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]$User,
         [System.Security.SecureString][Parameter(Mandatory=$true)]$Password,
         [Parameter(Mandatory = $true)]$Address,
-        $TCPPort=1883)
+        $TCPPort=$BMSInstructionSet.Config.MQTT.Port)
 
     #secured with a piece of tape. It's the thought that counts right?
     $PWD = ConvertFrom-SecureString -SecureString $Password -AsPlainText
@@ -55,7 +61,5 @@ function Send-MQTTValue {
             $i++
         }
     }
-   
-
-    
 }
+
