@@ -6,7 +6,7 @@ Type=simple
 Restart=always
 RestartSec=6
 ExecStart=/usr/bin/recbmsmqtt
-StartLimitIntervalSec=0
+StartLimitInterval=5
 
 [Install]
 WantedBy=multi-user.target
