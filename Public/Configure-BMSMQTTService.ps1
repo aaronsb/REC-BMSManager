@@ -1,6 +1,14 @@
 function Install-BMSMQTTService {
     switch ($PSVersionTable.Platform) {
         Unix {
+            if ((Test-Path /run/systemd/system) -eq $false) {
+                throw "BMSMQTT Service installation requires systemd"
+            }
+            $confTargetPath = (Join-Path -Path $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConfPath -ChildPath $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConf)
+            if (Test-Path $confTargetPath) {
+                Write-Warning "This will overwrite your existing configuration file. Press Control-C now to cancel or Enter to continue."
+                Read-Host
+            }
             $serviceName = $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceName
             $systemdPath = $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.SystemdPath
             $executableName = $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ExecutableName
@@ -53,13 +61,13 @@ function Install-BMSMQTTService {
 
 function Update-BMSMQTTService
 {
-    $confTargetPath = (Join-Path -Path $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConfPath -ChildPath $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConf)
-    if (Test-Path $confTargetPath) {
-        Write-Warning "This will overwrite your existing configuration file. Press Control-C now to cancel."
-    }
     switch ($PSVersionTable.Platform) {
         Unix {
             if ((id -u) -eq 0) {
+                $confTargetPath = (Join-Path -Path $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConfPath -ChildPath $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConf)
+                if (Test-Path $confTargetPath) {
+                    Write-Warning "This will overwrite your existing configuration file. Press Control-C now to cancel."
+                }
                 #region configure MQTT Service
                 $BrokerAcct = Read-Host -Prompt "MQTT Broker Account"
                 
@@ -72,19 +80,19 @@ function Update-BMSMQTTService
                     $BrokerCredJSON = $BrokerCredential | Select Username,@{Name="Password";Expression = { $_.password | ConvertFrom-SecureString }}
                 }
                 
-                $BrokerHost = Read-Host -Prompt "MQTT Broker Hostname"
+                $BrokerHost = Read-Host -Prompt "MQTT Broker Hostname [localhost]"
                 if ($BrokerHost -eq "") {
                     Write-Warning "Defaulting to host localhost"
                     $BrokerHost = "localhost"
                 }
-                $BrokerPort = Read-Host -Prompt "MQTT Broker TCP Port"
+                $BrokerPort = Read-Host -Prompt "MQTT Broker TCP Port [1883]"
                 if ($BrokerPort -eq "") {
                     Write-Warning "Defaulting broker port TCP/1883"
                     $BrokerPort = 1883
                 }
-                $BrokerPrefix = Read-Host -Prompt "Hint: root is [battery\#]`r`nMQTT Prefix"
+                $BrokerPrefix = Read-Host -Prompt "MQTT Prefix [battery\#]"
                 if ($BrokerPrefix -eq "") {
-                    $BrokerPrefix = $null
+                    $BrokerPrefix = "battery\#"
                 }
                 else {
                     #Sanitize broker path
@@ -93,7 +101,7 @@ function Update-BMSMQTTService
                     $BrokerPrefix = $BrokerPrefix.TrimEnd("/")
                     $BrokerPrefix = ($BrokerPrefix + "/")
                 }
-                $BrokerRetain = Read-Host -Prompt "Retain? [Y/N]"
+                $BrokerRetain = Read-Host -Prompt "Retain? [Y/n]"
                 if ($BrokerRetain -match "n") {
                     $BrokerRetain = $false
                 }
@@ -136,7 +144,14 @@ function Uninstall-BMSMQTTService
     switch ($PSVersionTable.Platform) {
         Unix {
             if ((id -u) -eq 0) {
-                Join-Path -Path (gci $PSCommandPath).Directory -ChildPath "recbmsmqtt.service"
+                $confTargetPath = (Join-Path -Path $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConfPath -ChildPath $BMSInstructionSet.Config.MQTT.ServicePaths.Unix.ServiceConf)
+                if (Test-Path $confTargetPath) {
+                    Write-Warning "This will disable and remove the recbmsmqtt service and configuration files. Press Control-C now to cancel or Enter to continue."
+                    Read-Host
+                }
+                systemctl disable recbmsmqtt
+                remove-item $confTargetPath
+                remove-item /etc/systemd/system/recbmsmqtt.service
             }
             else {
                 Write-Error "This command requires SUDO privilages"
