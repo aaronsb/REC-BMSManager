@@ -73,6 +73,26 @@ You can change the Port Name by setting the variable:
 
 ![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/MQTT.gif)
 
+# systemd service installer/uninstaller to ship values to MQTT broker
+
+```Install-BMSMQTTService``` is a service used to install and configure a systemd based service poller that pushes the content to an MQTT broker.
+You need to have installed the REC-BMSManager module in your system-wide powershell environment. For example:
+
+cd /opt/microsoft/powershell/7/Modules
+git clone https://github.com/aaronsb/REC-BMSManager.git
+
+This is necessary due to the way systemd calls the service and requires the Powershell module to be available.
+
+Here is a short example of installing the service.
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/install-bmsmqttservice.gif)
+
+Here is a short example of updating the service parameters. Make sure you restart the service for the changes to take effect.
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/update-bmsmqttservice.gif)
+
+Here is a short example of uninstalling the service.
+![Example](https://raw.githubusercontent.com/aaronsb/REC-BMSManager/main/images/uninstall-bmsmqttservice.gif)
+
+
 ## Sending data to the BMS
 ```Set-BMSParameter``` is the command to set parameters that are setable. One value per instruction. All instructions are validated against library min and max values.
 
