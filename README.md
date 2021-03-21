@@ -112,6 +112,8 @@ The intention of this set of management functions is as follows:
 - [x] Use byte format internally with messaging
 - [x] Build functions as a module
 - [x] Write a systemd service installer
+- [x] Write a systemd service configurator
+- [x] Write a systemd service uninstaller
 - [ ] Write a windows service installer
 - [ ] Write Pester tests to ensure things are working right on future releases
 - [x] Figure out instructions to perform writes to module
