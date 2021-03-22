@@ -119,6 +119,7 @@ The intention of this set of management functions is as follows:
 - [x] Figure out instructions to perform writes to module
 - [ ] Write function get-help blocks for additional documentation.
 - [x] Add an MQTT exporter
+- [ ] Make a pscore docker environment so it just sorta works.
 
 
 Current release notes:
