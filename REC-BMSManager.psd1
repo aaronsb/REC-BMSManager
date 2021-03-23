@@ -12,13 +12,13 @@
 RootModule = 'REC-BMSManager.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.9.5'
+ModuleVersion = '0.9.6'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
 
 # ID used to uniquely identify this module
-GUID = 'b21ecfb8-30ee-45fc-a645-b16c91ba4df6'
+GUID = 'd17c0369-ce6d-4842-aeff-2b990e77e50f'
 
 # Author of this module
 Author = 'Aaron Bockelie'
@@ -30,10 +30,10 @@ CompanyName = 'AaronBockelie'
 Copyright = '(c) Aaron Bockelie. All rights reserved.'
 
 # Description of the functionality provided by this module
-# Description = ''
+Description = 'Powershell based management for REC-BMS battery management modules. Built and designed by Rec-BMS, these modules are chainable as a parent-> multi child BMS system in harsh conditions.'
 
 # Minimum version of the PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '7.1.3'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
