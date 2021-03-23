@@ -16,7 +16,11 @@ Powershell based management for REC-BMS battery management modules. Built and de
 * This toolset functions properly in both Windows and Linux environments. It was developed in Powershell Core
 
 # How To Install
-There's no PS Gallery version of this (yet) so you'll need to install it manually. You'll need a working copy of git to clone this locally onto your machine.
+Install from the PSGallery
+
+```Install-Module -Name REC-BMSManager -AllowPrerelease```
+
+Optionally, you can clone from the git repo into your modules directory. If you plan on instancing this as a systemd daemon on Linux, you need to import the module to the system module location, typically ```/opt/microsoft/powershell/7/Modules/``` directory, if for example you were using Powershell 7.x.x
 
 ## Example Installation Instructions
 
