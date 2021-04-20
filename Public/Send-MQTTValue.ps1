@@ -32,7 +32,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         $topic = ($BMSInstructionSet.Config.MQTT.TopicPrefix + "battery/cell/" + $i + "/volts") 
-        $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet
+        $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet 2>&1 | out-null
         $i++
     }
     Get-Date | Out-Host
@@ -46,7 +46,7 @@ function Send-MQTTValue {
     $i = 1
     ForEach ($v in $Values) {
         $topic = ($BMSInstructionSet.Config.MQTT.TopicPrefix + "battery/cell/" + $i + "/ohms") 
-        $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet
+        $v.value | %{"{0:N10}" -f $_} | %{$_.ToString()} | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet 2>&1 | out-null
         $i++
     }
     Get-Date | Out-Host
@@ -60,7 +60,7 @@ function Send-MQTTValue {
     ForEach ($v in $Values) {
         $topicName = $v.Description -replace " ","_"
         $topic = ($BMSInstructionSet.Config.MQTT.TopicPrefix + "battery/status/" + $topicName) 
-        $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet
+        $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet 2>&1 | out-null
     }
     Get-Date | Out-Host
     $Values | Out-Host
@@ -74,11 +74,11 @@ function Send-MQTTValue {
     ForEach ($v in $Values) {
         if ($v.Description -match "BMS") {
             $topic = ($BMSInstructionSet.Config.MQTT.TopicPrefix + "battery/status/temperature/bms/1")
-            $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet
+            $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet 2>&1 | out-null
         }
         else {
             $topic = ($BMSInstructionSet.Config.MQTT.TopicPrefix + "battery/status/temperature/pack/" + $i)
-            $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet
+            $v.Value | mosquitto_pub -h $Address -p $TCPPort -i RECBMS -t $topic -u $User -P $PWD -r -l --quiet 2>&1 | out-null
             $i++
         }
     }
